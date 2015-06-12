@@ -1,0 +1,3 @@
+- identifiers should be unique; add constraints for enforcement
+- TOC etc filters
+- constrain allowed relationships on entity CRUD routes
