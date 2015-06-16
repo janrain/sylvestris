@@ -1,9 +1,11 @@
 package model
 
 import graph._
+import spray.json._, DefaultJsonProtocol._
 
 object Customer {
   implicit object tag extends Tag[Customer]("cust")
+  implicit val jsonFormat = jsonFormat1(apply)
 }
 
-class Customer
+case class Customer(name: String)

@@ -2,6 +2,7 @@ package graph
 
 import scalaz.std._, string._, anyVal._
 import scalaz.syntax.equal._
+import spray.json._
 
 object InMemoryGraph extends Graph {
   // TODO Make gnodes a Map
@@ -10,13 +11,13 @@ object InMemoryGraph extends Graph {
 
   def nodes(): Set[Node[_]] = gnodes.map(n => Node(Id(n.id), n.content)).toSet
 
-  def addNode[T : Tag](node: Node[T]): Node[T] = {
+  def addNode[T : Tag : JsonFormat](node: Node[T]): Node[T] = {
     println(s"adding $node")
     gnodes +:= GNode(node)
     node
   }
 
-  def updateNode[T : Tag](node: Node[T]): Node[T] = {
+  def updateNode[T : Tag : JsonFormat](node: Node[T]): Node[T] = {
     println(s"updating $node")
     val index = gnodes.indexWhere(_.id === node.id.v)
     if (index === -1) sys.error("node not found")
@@ -46,9 +47,9 @@ object InMemoryGraph extends Graph {
   }
 
   // TODO check found type
-  def lookupNode[T : Tag](id: Id[T]): Option[Node[T]] = gnodes.find(_.id === id.v).map {
+  def lookupNode[T : Tag : JsonFormat](id: Id[T]): Option[Node[T]] = gnodes.find(_.id === id.v).map {
     found =>
-      Node[T](id, found.content)
+      Node[T](id, found.content.parseJson.convertTo[T])
   }
 
   def lookupEdges[T : Tag, U : Tag](id: Id[T]): Set[Edge[T, U]] =

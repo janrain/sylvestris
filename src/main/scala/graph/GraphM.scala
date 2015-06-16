@@ -1,5 +1,7 @@
 package graph
 
+import spray.json._
+
 // the monad appears
 // TODO rename this
 trait GraphM[T, U] {
@@ -16,9 +18,9 @@ object GraphM {
 
     def nodes(): GraphM[Graph, Set[Node[_]]] = GraphM(g => g.nodes())
 
-    def add[T : Tag](node: Node[T]): GraphM[Graph, Node[T]] = GraphM(g => g.addNode(node))
+    def add[T : Tag : JsonFormat](node: Node[T]): GraphM[Graph, Node[T]] = GraphM(g => g.addNode(node))
 
-    def update[T : Tag](node: Node[T]): GraphM[Graph, Node[T]] = GraphM(g => g.updateNode(node))
+    def update[T : Tag : JsonFormat](node: Node[T]): GraphM[Graph, Node[T]] = GraphM(g => g.updateNode(node))
 
     def link[T : Tag, U : Tag](a: Node[T], b: Node[U]): GraphM[Graph, Graph] =
       GraphM(g => g.addEdge(Edge(a.id, b.id)))
@@ -28,7 +30,7 @@ object GraphM {
     def unlink[T : Tag, U : Tag](a: Node[T], b: Node[U]): GraphM[Graph, Graph] =
       GraphM(g => g.removeEdge(Edge(a.id, b.id)))
 
-    def lookupNode[T : Tag](id: Id[T]): GraphM[Graph, Option[Node[T]]] = GraphM(g => g.lookupNode(id))
+    def lookupNode[T : Tag : JsonFormat](id: Id[T]): GraphM[Graph, Option[Node[T]]] = GraphM(g => g.lookupNode(id))
 
     def lookupEdges[T : Tag, U : Tag](id: Id[T]): GraphM[Graph, Set[Edge[T, U]]] =
       GraphM(g => g.lookupEdges(id))

@@ -3,8 +3,8 @@ import model._, relationships._
 
 object example {
 
-  val org: Node[Organization] = Node[Organization](Id("org"), "Organization")
-  val customer: Node[Customer] = Node[Customer](Id("cust"), "Customer")
+  val org: Node[Organization] = Node[Organization](Id("org"), Organization("Organization"))
+  val customer: Node[Customer] = Node[Customer](Id("cust"), Customer("Customer"))
 
   val eg1 =
     for {

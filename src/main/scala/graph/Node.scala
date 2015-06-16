@@ -6,7 +6,7 @@ import spray.json._, DefaultJsonProtocol._
 trait NodeOps[T] {
   def node: Node[T]
 
-  def to[V](implicit ev1: Tag[T], ev2: Tag[V], ev3: Relationship[T, V])
+  def to[V](implicit ev1: Tag[T], ev2: Tag[V], ev3: Relationship[T, V], ev4: JsonFormat[V])
     : GraphM[Graph, Option[Node[V]]] =
     lookupEdges[T, V](node.id).flatMap { edges =>
       val nodes: Set[GraphM[Graph, Option[Node[V]]]] = edges.map { edge => lookupNode(edge.to) }
@@ -20,9 +20,9 @@ object Node {
     val node: Node[T] = n
   }
 
-  implicit def jsonFormat[T] = jsonFormat2(apply[T])
+  implicit def jsonFormat[T : JsonFormat] = jsonFormat2(apply[T])
 
-  implicit val existentialJsonFormat: JsonFormat[Node[_]] = jsonFormat2(apply)
+  implicit def existentialJsonFormat[T: JsonFormat]: JsonFormat[Node[_]] = jsonFormat2(apply[T])
 }
 
-case class Node[T](id: Id[T], content: String)
+case class Node[T](id: Id[T], content: T)

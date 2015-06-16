@@ -10,8 +10,8 @@ object boot {
 
   def populate =
     for {
-      o <- add(Node[Organization](Id("org1"), "some content"))
-      c <- add(Node[Customer](Id("cust1"), "some content"))
+      o <- add(Node[Organization](Id("org1"), Organization("Org 1")))
+      c <- add(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
       _ <- link(c, o)
       _ <- link(o, c)
     }

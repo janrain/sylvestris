@@ -1,3 +1,7 @@
 - identifiers should be unique; add constraints for enforcement
 - TOC etc filters
 - constrain allowed relationships on entity CRUD routes
+- demonstrate custom lens
+- external API client
+- Monad Transformers or something else to handle lookup and find collections
+- JsonFormat context bound is proliferating. Find a way to contain this.

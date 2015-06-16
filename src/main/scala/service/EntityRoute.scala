@@ -3,7 +3,7 @@ package service
 import graph._, GraphM._
 import scalaz.syntax.equal._
 import spray.httpx.SprayJsonSupport._
-import spray.json.DefaultJsonProtocol._
+import spray.json._, DefaultJsonProtocol._
 import spray.routing._, HttpService._
 
 case class NodeWithRelationships[T](node: Node[T], relationships: Set[Id[_]])
@@ -11,22 +11,22 @@ case class NodeWithRelationships[T](node: Node[T], relationships: Set[Id[_]])
 object NodeWithRelationships {
   import spray.json.DefaultJsonProtocol._
 
-  implicit def jsonFormat[T] = jsonFormat2(apply[T])
+  implicit def jsonFormat[T : JsonFormat] = jsonFormat2(apply[T])
 
-  def nodeWithRelationships[T : Tag](id: Id[T]) =
+  def nodeWithRelationships[T : Tag : JsonFormat](id: Id[T]) =
     for {
       n <- lookupNode(id)
       e <- lookupEdgesAll(id)
     }
     yield n.map(v => NodeWithRelationships[T](v, e.map(_.to)))
 
-  def addNodeWithRelationships[T : Tag](nodeWithRelationships: NodeWithRelationships[T]) =
+  def addNodeWithRelationships[T : Tag : JsonFormat](nodeWithRelationships: NodeWithRelationships[T]) =
     for {
       n <- add(nodeWithRelationships.node)
     }
     yield nodeWithRelationships
 
-  def updateNodeWithRelationships[T : Tag](nodeWithRelationships: NodeWithRelationships[T]) =
+  def updateNodeWithRelationships[T : Tag : JsonFormat](nodeWithRelationships: NodeWithRelationships[T]) =
     for {
       n <- update(nodeWithRelationships.node)
     }
@@ -34,11 +34,11 @@ object NodeWithRelationships {
 
 }
 
-case class EntityRoute[T : Tag](pathSegment: String) {
+case class EntityRoute[T : Tag : JsonFormat](pathSegment: String) {
 
   val tableOfContents =
     complete {
-      nodes().run(InMemoryGraph)
+      nodes().run(InMemoryGraph).map(_.id.v)
     }
 
   // TODO : constrain relationships
