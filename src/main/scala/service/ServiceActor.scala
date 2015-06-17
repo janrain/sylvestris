@@ -5,7 +5,6 @@ import graph._
 import spray.httpx.SprayJsonSupport._
 import model._
 import spray.routing._
-import spray.httpx.marshalling.ToResponseMarshallable
 
 class ServiceActor extends Actor with HttpService with Directives {
 
@@ -16,7 +15,7 @@ class ServiceActor extends Actor with HttpService with Directives {
   lazy val route =
     pathPrefix("api") {
       EntityRoute[Customer]("customers").crudRoute ~
-      EntityRoute[Organization]("orgs").crudRoute ~
+      EntityRoute[Organization](PathSegment[Organization].v).crudRoute ~
       // TODO clean this up
       pathPrefix("org_cust_lens")(
         path(new IdMatcher[Organization])(id =>

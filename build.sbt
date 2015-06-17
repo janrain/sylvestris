@@ -44,6 +44,7 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.12.3",
   "io.spray" %%  "spray-json" % "1.3.1",
   "io.spray" %% "spray-can" % sprayVersion,
+  "io.spray" %% "spray-client" % sprayVersion,
   "io.spray" %% "spray-http" % sprayVersion,
   "io.spray" %% "spray-httpx" % sprayVersion,
   "io.spray" %% "spray-routing" % sprayVersion,
