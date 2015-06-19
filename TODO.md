@@ -1,8 +1,13 @@
 - external API client
 - constrain allowed relationships on entity CRUD routes
-- Monad Transformers or something else to handle lookup and find collections
+- monad Transformers or something else to handle lookup and find collections
 - consider Triggered Views within this world
 - identifiers should be unique; add constraints for enforcement
 - JsonFormat context bound is proliferating. Find a way to contain this.
 - separate out into proper sbt sub-projects
 - open-source it; keep the result of this work open-source ready
+- revisit naming of GraphM
+- tests
+- pull PathSegments and NodeWithRelationships out of service and move them into service-common
+- model should be more like an example project, less janrain specific
+- add type level tests for GraphM linking (shapeless' illtyped)
