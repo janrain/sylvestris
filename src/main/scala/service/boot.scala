@@ -4,7 +4,7 @@ import akka.actor.{ Actor, ActorSystem, Props }
 import spray.can.Http
 import akka.io.IO
 import graph._, GraphM._
-import model._
+import model._, relationships._
 
 object boot {
 

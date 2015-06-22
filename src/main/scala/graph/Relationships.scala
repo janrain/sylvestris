@@ -3,7 +3,7 @@ package graph
 import org.reflections.Reflections
 import scalaz._, Scalaz._
 
-class Relationship[T : Tag, U : Tag] {
+sealed class Relationship[T : Tag, U : Tag] {
   val tTag = Tag[T]
   val uTag = Tag[U]
 }
@@ -27,12 +27,13 @@ object ManyToOne {
 }
 
 case class RelationshipMappings(packagePrefix: String) {
+  // TODO this needs to be done for all relationship types
   val mapping = new Reflections(packagePrefix).getSubTypesOf(classOf[OneToOne[_, _]]).toArray.toList
     .map { i =>
       val z = i.asInstanceOf[Class[OneToOne[_, _]]].newInstance
-      val t = z.tTag.v
-      val u = z.uTag.v
-      Map(t -> List(u), u -> List(t))
+      Map(
+        z.tTag.v -> List[Relationship[_, _]](z),
+        z.uTag.v -> List[Relationship[_, _]](new OneToOne()(z.uTag, z.tTag)))
     }
     .suml
 }
@@ -43,7 +44,7 @@ object Relationship {
 
   implicit def reverseOneToOne[T : Tag, U : Tag](implicit ev: OneToOne[T, U]) = OneToOne[U, T]
 
-  implicit def reverseOneToMany[T : Tag, U : Tag](implicit ev: Relationship[T, U]) = ManyToOne[U, T]
+  implicit def reverseOneToMany[T : Tag, U : Tag](implicit ev: OneToMany[T, U]) = ManyToOne[U, T]
 
   def relationship[T, U](implicit ev: Relationship[T, U]) = true
 

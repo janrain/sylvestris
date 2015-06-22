@@ -31,7 +31,10 @@ trait Graph {
   def addEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph
   def addEdge(gedge: GEdge): Graph
   def removeEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph
+  def removeEdges[T : Tag, U : Tag](id: Id[T]): Graph
+  def removeEdges(id: String, tagA: String, tagB: String): Graph
   def lookupNode[T : Tag : JsonFormat](id: Id[T]): Option[Node[T]]
   def lookupEdges[T : Tag, U : Tag](id: Id[T]): Set[Edge[T, U]]
+  def lookupEdges(id: String, tagA: String, tagB: String): Set[GEdge]
   def lookupEdgesAll[T : Tag](id: Id[T]): Set[Edge[T, _]]
 }

@@ -8,7 +8,9 @@
 - open-source it; keep the result of this work open-source ready
 - revisit naming of GraphM
 - tests
-- pull PathSegments and NodeWithRelationships out of service and move them into service-common
+- pull NodeWithRelationships out of service and move them into service-common
+- remove PathSegment
 - model should be more like an example project, less janrain specific
 - add type level tests for GraphM linking (shapeless' illtyped)
 - s/Entity/Node/g
+- separate out typed and untyped access for GraphM and Graph

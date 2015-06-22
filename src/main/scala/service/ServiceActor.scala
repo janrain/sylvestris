@@ -3,15 +3,26 @@ package service
 import akka.actor.{ Actor, ActorSystem, Props }
 import graph._
 import spray.httpx.SprayJsonSupport._
+import spray.routing.directives.ExecutionDirectives._
 import model._
 import spray.routing._
+import shapeless.HNil
 
 object NodeRoute {
   val nodeRoutes = List(
-    EntityRoute[Customer]("customers"),
-    EntityRoute[Organization]("orgs"))
+    EntityRoute[Customer]("customers", relationships.relationshipMappings),
+    EntityRoute[Organization]("orgs", relationships.relationshipMappings))
 
   val pathSegmentToTag = nodeRoutes.map(i => i.pathSegment -> i.tag.v).toMap
+}
+
+object HandleExceptions extends Directive0 {
+  def happly(f: HNil => Route): Route = handleExceptions(handler)(f(HNil))
+
+  private val handler = ExceptionHandler {
+    case ex: Exception => ctx =>
+      ctx.complete(ex.getMessage)
+  }
 }
 
 class ServiceActor extends Actor with HttpService with Directives {
@@ -20,11 +31,9 @@ class ServiceActor extends Actor with HttpService with Directives {
 
   val receive = runRoute(route)
 
-  lazy val route =
+  lazy val route = HandleExceptions {
     pathPrefix("api") {
-      NodeRoute.nodeRoutes.map(_.crudRoute).reduce(_ ~ _)
-      EntityRoute[Customer]("customers").crudRoute ~
-      EntityRoute[Organization](PathSegment[Organization].v).crudRoute ~
+      NodeRoute.nodeRoutes.map(_.crudRoute).reduce(_ ~ _) ~
       // TODO clean this up
       pathPrefix("org_cust_lens")(
         path(new IdMatcher[Organization])(id =>
@@ -35,5 +44,6 @@ class ServiceActor extends Actor with HttpService with Directives {
               complete(CustomLens.update(id, data).run(InMemoryGraph))
             })))
     }
+  }
 
 }

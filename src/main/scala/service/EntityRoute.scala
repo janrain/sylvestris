@@ -31,6 +31,9 @@ object NodeWithRelationships {
   import spray.json.DefaultJsonProtocol._
 
   implicit def jsonFormat[T : JsonFormat] = jsonFormat2(apply[T])
+}
+
+case class NodeWithRelationshipsOps(relationshipMappings: Map[String, List[graph.Relationship[_, _]]]) {
 
   val NodePathExtractor = "/api/(.*?)/(.*)".r
 
@@ -51,12 +54,14 @@ object NodeWithRelationships {
     yield n.map(v => NodeWithRelationships[T](v, e.map(e => Relationship(e.to.v))))
 
   def addNodeWithRelationships[T : Tag : JsonFormat](nodeWithRelationships: NodeWithRelationships[T]) = {
-    // TODO : constraints
+    // TODO : move sys errors to specific return type
     for {
       n <- add(nodeWithRelationships.node)
       _ <- GraphM.sequence(nodeWithRelationships.relationships.map { relationship =>
         val (tag, id) = splitNodePath(relationship.nodePath)
-        link(n.id.v, Tag[T].v, id, tag)
+        val relationships = relationshipMappings
+          .getOrElse(Tag[T].v, sys.error("Node has no relationships"))
+        link(n.id.v, Tag[T].v, id, tag)(relationships)
       })
     }
     yield nodeWithRelationships
@@ -70,7 +75,8 @@ object NodeWithRelationships {
 
 }
 
-case class EntityRoute[T : Tag : JsonFormat](pathSegment: String) {
+// TOOD relationshipMappings should be injected in some nicer way
+case class EntityRoute[T : Tag : JsonFormat](pathSegment: String, relationshipMappings: Map[String, List[graph.Relationship[_, _]]])  {
 
   val tag = Tag[T]
 
@@ -79,16 +85,18 @@ case class EntityRoute[T : Tag : JsonFormat](pathSegment: String) {
       nodes().run(InMemoryGraph).map(_.id.v)
     }
 
+  val nodeOps = NodeWithRelationshipsOps(relationshipMappings)
+
   // TODO : constrain relationships
   val create = entity(as[NodeWithRelationships[T]]) { nodeWithRelationships =>
     complete {
-      NodeWithRelationships.addNodeWithRelationships[T](nodeWithRelationships).run(InMemoryGraph)
+      nodeOps.addNodeWithRelationships[T](nodeWithRelationships).run(InMemoryGraph)
     }
   }
 
   def read(id: Id[T]) =
     complete {
-      NodeWithRelationships.nodeWithRelationships(id).run(InMemoryGraph)
+      nodeOps.nodeWithRelationships(id).run(InMemoryGraph)
     }
 
     // TODO : constrain relationships
@@ -97,7 +105,7 @@ case class EntityRoute[T : Tag : JsonFormat](pathSegment: String) {
       if (nodeWithRelationships.node.id =/= id) {
         sys.error("id mismatch - view and URL id must match")
       }
-      NodeWithRelationships.updateNodeWithRelationships[T](nodeWithRelationships).run(InMemoryGraph)
+      nodeOps.updateNodeWithRelationships[T](nodeWithRelationships).run(InMemoryGraph)
     }
   }
 

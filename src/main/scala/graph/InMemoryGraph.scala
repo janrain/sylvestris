@@ -53,6 +53,18 @@ object InMemoryGraph extends Graph {
     this
   }
 
+  def removeEdges[T : Tag, U : Tag](id: Id[T]): Graph = {
+    println(s"removing some edges for $id")
+    gedges = gedges.filterNot(e => e.idA === id.v && e.tagA === Tag[T].v && e.tagB === Tag[U].v)
+    this
+  }
+
+  def removeEdges(id: String, tagA: String, tagB: String): Graph = {
+    println(s"removing some edges for $id")
+    gedges = gedges.filterNot(e => e.idA === id && e.tagA === tagA && e.tagB === tagB)
+    this
+  }
+
   // TODO check found type
   def lookupNode[T : Tag : JsonFormat](id: Id[T]): Option[Node[T]] = gnodes.find(_.id === id.v).map {
     found =>
@@ -63,6 +75,9 @@ object InMemoryGraph extends Graph {
     gedges
       .filter(e => e.idA === id.v && e.tagB === implicitly[Tag[U]].v)
       .map(e => Edge(id, Id[U](e.idB)))
+
+  def lookupEdges(id: String, tagA: String, tagB: String): Set[GEdge] =
+    gedges.filter(e => e.idA === id && e.tagA === tagA && e.tagB === tagB)
 
   def lookupEdgesAll[T : Tag](id: Id[T]): Set[Edge[T, _]] =
     gedges
