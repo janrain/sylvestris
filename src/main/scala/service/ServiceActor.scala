@@ -6,6 +6,14 @@ import spray.httpx.SprayJsonSupport._
 import model._
 import spray.routing._
 
+object NodeRoute {
+  val nodeRoutes = List(
+    EntityRoute[Customer]("customers"),
+    EntityRoute[Organization]("orgs"))
+
+  val pathSegmentToTag = nodeRoutes.map(i => i.pathSegment -> i.tag.v).toMap
+}
+
 class ServiceActor extends Actor with HttpService with Directives {
 
   implicit lazy val actorRefFactory = context
@@ -14,6 +22,7 @@ class ServiceActor extends Actor with HttpService with Directives {
 
   lazy val route =
     pathPrefix("api") {
+      NodeRoute.nodeRoutes.map(_.crudRoute).reduce(_ ~ _)
       EntityRoute[Customer]("customers").crudRoute ~
       EntityRoute[Organization](PathSegment[Organization].v).crudRoute ~
       // TODO clean this up

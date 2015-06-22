@@ -1,5 +1,6 @@
 package graph
 
+import Graph._
 import scalaz.std._, string._, anyVal._
 import scalaz.syntax.equal._
 import spray.json._
@@ -37,6 +38,12 @@ object InMemoryGraph extends Graph {
   def addEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph = {
     println(s"adding $edge")
     gedges += GEdge(edge)
+    this
+  }
+
+  def addEdge(gedge: GEdge): Graph = {
+    println(s"adding $gedge")
+    gedges += gedge
     this
   }
 

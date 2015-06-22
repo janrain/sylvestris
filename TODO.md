@@ -11,3 +11,4 @@
 - pull PathSegments and NodeWithRelationships out of service and move them into service-common
 - model should be more like an example project, less janrain specific
 - add type level tests for GraphM linking (shapeless' illtyped)
+- s/Entity/Node/g

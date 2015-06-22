@@ -31,7 +31,7 @@ addCompilerPlugin("com.foursquare.lint" %% "linter" % "0.1.10")
 
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.5.4")
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.6.0")
 
 Revolver.settings
 
@@ -42,12 +42,14 @@ val sprayVersion = "1.3.3"
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.1.2",
   "org.scalacheck" %% "scalacheck" % "1.12.3",
-  "io.spray" %%  "spray-json" % "1.3.1",
+  "io.spray" %%  "spray-json" % "1.3.2",
   "io.spray" %% "spray-can" % sprayVersion,
   "io.spray" %% "spray-client" % sprayVersion,
   "io.spray" %% "spray-http" % sprayVersion,
   "io.spray" %% "spray-httpx" % sprayVersion,
-  "io.spray" %% "spray-routing" % sprayVersion,
-  "com.typesafe.akka" %% "akka-actor" % "2.3.3")
+  "io.spray" %% "spray-routing-shapeless2" % sprayVersion,
+  "com.typesafe.akka" %% "akka-actor" % "2.3.3",
+  "org.reflections" % "reflections" % "0.9.10",
+  "org.slf4j" % "slf4j-api" % "1.7.12")
 
 initialCommands := "import graph._, GraphM._, Relationship._, model._, relationships._, shapeless._, example._"
