@@ -76,9 +76,12 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[String, List[graph
 }
 
 // TOOD relationshipMappings should be injected in some nicer way
-case class EntityRoute[T : Tag : JsonFormat](pathSegment: String, relationshipMappings: Map[String, List[graph.Relationship[_, _]]])  {
+case class EntityRoute[T : Tag : JsonFormat : PathSegment]
+  (relationshipMappings: Map[String, List[graph.Relationship[_, _]]])  {
 
   val tag = Tag[T]
+
+  val pathSegment = PathSegment[T]
 
   val tableOfContents =
     complete {
@@ -116,7 +119,7 @@ case class EntityRoute[T : Tag : JsonFormat](pathSegment: String, relationshipMa
     }
 
   val crudRoute =
-    pathPrefix(pathSegment)(
+    pathPrefix(pathSegment.v)(
       pathEnd(
         get(tableOfContents) ~
         post(create)) ~

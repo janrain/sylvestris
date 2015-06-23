@@ -9,11 +9,18 @@ import spray.routing._
 import shapeless.HNil
 
 object NodeRoute {
-  val nodeRoutes = List(
-    EntityRoute[Customer]("customers", relationships.relationshipMappings),
-    EntityRoute[Organization]("orgs", relationships.relationshipMappings))
+  object pathSegments {
+    implicit val customer = PathSegment[Customer]("customers")
+    implicit val organization = PathSegment[Organization]("orgs")
+  }
 
-  val pathSegmentToTag = nodeRoutes.map(i => i.pathSegment -> i.tag.v).toMap
+  import pathSegments._
+
+  val nodeRoutes = List(
+    EntityRoute[Customer](relationships.relationshipMappings),
+    EntityRoute[Organization](relationships.relationshipMappings))
+
+  val pathSegmentToTag = nodeRoutes.map(i => i.pathSegment.v -> i.tag.v).toMap
 }
 
 object HandleExceptions extends Directive0 {
