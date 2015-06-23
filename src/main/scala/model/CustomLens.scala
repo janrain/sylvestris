@@ -5,11 +5,11 @@ import model.relationships._
 import spray.json._, DefaultJsonProtocol._
 
 trait View[T, U] {
-  def get(id: Id[T]): GraphM[Graph, U]
+  def get(id: Id[T]): GraphM[U]
 }
 
 trait Update[T, U] {
-  def update(id: Id[T], data: U): GraphM[Graph, U]
+  def update(id: Id[T], data: U): GraphM[U]
 }
 
 case class CustomData(orgName: String, customerName: String)
@@ -19,7 +19,7 @@ object CustomData {
 }
 
 object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
-  def get(id: Id[Organization]): GraphM[Graph, CustomData] =
+  def get(id: Id[Organization]): GraphM[CustomData] =
     for {
       org <- lookupNode(id)
       // TODO get is bad!
@@ -28,7 +28,7 @@ object CustomLens extends View[Organization, CustomData] with Update[Organizatio
     yield CustomData(org.get.content.name, customer.get.content.name)
 
 
-  def update(id: Id[Organization], data: CustomData): GraphM[Graph, CustomData] =
+  def update(id: Id[Organization], data: CustomData): GraphM[CustomData] =
     for {
       orgOpt <- lookupNode(id)
       org = orgOpt.get

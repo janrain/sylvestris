@@ -7,9 +7,9 @@ trait NodeOps[T] {
   def node: Node[T]
 
   def to[V](implicit ev1: Tag[T], ev2: Tag[V], ev3: Relationship[T, V], ev4: JsonFormat[V])
-    : GraphM[Graph, Option[Node[V]]] =
+    : GraphM[Option[Node[V]]] =
     lookupEdges[T, V](node.id).flatMap { edges =>
-      val nodes: Set[GraphM[Graph, Option[Node[V]]]] = edges.map { edge => lookupNode(edge.to) }
+      val nodes: Set[GraphM[Option[Node[V]]]] = edges.map { edge => lookupNode(edge.to) }
       // TODO : head unsafe, solve later
       nodes.head
     }
