@@ -1,18 +1,17 @@
-- external API client -- We have GET, need PUT and POST
-- constrain allowed relationships on entity CRUD routes -- POST is done, need PUT
 - data validations
 - edge labels e.g. parent/child
+- separate out typed and untyped access for GraphM and Graph
+- pull PathSegment and NodeWithRelationships out of service and move them into service-common
+- separate out into proper sbt sub-projects
+- external API client -- We have GET, need PUT and POST
+- constrain allowed relationships on entity CRUD routes -- POST is done, need PUT
 - how do we migrate current data to this model?
-- monad Transformers or something else to handle lookup and find collections
 - consider Triggered Views within this world
 - identifiers should be unique; add constraints for enforcement
 - JsonFormat context bound is proliferating. Find a way to contain this.
-- separate out into proper sbt sub-projects
 - open-source it; keep the result of this work open-source ready
 - revisit naming of GraphM
 - tests
-- pull PathSegment and NodeWithRelationships out of service and move them into service-common
 - model should be more like an example project, less janrain specific
 - add type level tests for GraphM linking (shapeless' illtyped)
 - s/Entity/Node/g
-- separate out typed and untyped access for GraphM and Graph
