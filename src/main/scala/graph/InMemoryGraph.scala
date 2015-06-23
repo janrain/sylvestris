@@ -12,13 +12,13 @@ object InMemoryGraph extends Graph {
 
   def nodes(): Set[Node[_]] = gnodes.map(n => Node(Id(n.id), n.content)).toSet
 
-  def addNode[T : Tag : JsonFormat](node: Node[T]): Node[T] = {
+  def addNode[T : NodeManifest](node: Node[T]): Node[T] = {
     println(s"adding $node")
     gnodes +:= GNode(node)
     node
   }
 
-  def updateNode[T : Tag : JsonFormat](node: Node[T]): Node[T] = {
+  def updateNode[T : NodeManifest](node: Node[T]): Node[T] = {
     println(s"updating $node")
     val index = gnodes.indexWhere(_.id === node.id.v)
     if (index === -1) sys.error("node not found")
@@ -26,7 +26,7 @@ object InMemoryGraph extends Graph {
     node
   }
 
-  def removeNode[T : Tag](id: Id[T]): Graph = {
+  def removeNode[T : NodeManifest](id: Id[T]): Graph = {
     println(s"remove $id")
     gnodes = gnodes.filterNot(_.id === id.v)
     gedges = gedges.filterNot(e => e.idA === id.v || e.idB === id.v)
@@ -66,9 +66,11 @@ object InMemoryGraph extends Graph {
   }
 
   // TODO check found type
-  def lookupNode[T : Tag : JsonFormat](id: Id[T]): Option[Node[T]] = gnodes.find(_.id === id.v).map {
-    found =>
-      Node[T](id, found.content.parseJson.convertTo[T])
+  def lookupNode[T](id: Id[T])(implicit nm: NodeManifest[T]): Option[Node[T]] = {
+    import nm.jsonFormat
+    gnodes.find(_.id === id.v).map {
+      found => Node[T](id, found.content.parseJson.convertTo[T])
+    }
   }
 
   def lookupEdges[T : Tag, U : Tag](id: Id[T]): Set[Edge[T, U]] =

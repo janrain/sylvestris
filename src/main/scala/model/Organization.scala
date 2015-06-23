@@ -1,13 +1,14 @@
 package model
 
 import graph._
-import service._
 import spray.json._, DefaultJsonProtocol._
 
 object Organization {
-  implicit object tag extends Tag[Organization]("org")
-  implicit object pathSegment extends PathSegment[Organization]("orgs")
-  implicit val jsonFormat = jsonFormat1(apply)
+  implicit object nodeManifest extends NodeManifest[Organization] {
+    implicit object tag extends Tag[Organization]("org")
+    implicit val jsonFormat = jsonFormat1(apply)
+    implicit object validation extends Validation[Organization]
+  }
 }
 
 case class Organization(name: String)

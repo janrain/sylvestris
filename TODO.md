@@ -8,9 +8,11 @@
 - how do we migrate current data to this model?
 - consider Triggered Views within this world
 - identifiers should be unique; add constraints for enforcement
-- JsonFormat context bound is proliferating. Find a way to contain this.
 - open-source it; keep the result of this work open-source ready
 - tests
 - model should be more like an example project, less janrain specific
 - add type level tests for GraphM linking (shapeless' illtyped)
 - s/Entity/Node/g
+- scoverage
+- CI
+- generalize JSON serialization. e.g. Pickle[T]

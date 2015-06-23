@@ -46,14 +46,14 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[String, List[graph
     }
   }
 
-  def nodeWithRelationships[T : Tag : JsonFormat](id: Id[T]) =
+  def nodeWithRelationships[T : NodeManifest](id: Id[T]) =
     for {
       n <- lookupNode(id)
       e <- lookupEdgesAll(id)
     }
     yield n.map(v => NodeWithRelationships[T](v, e.map(e => Relationship(e.to.v))))
 
-  def addNodeWithRelationships[T : Tag : JsonFormat](nodeWithRelationships: NodeWithRelationships[T]) = {
+  def addNodeWithRelationships[T : NodeManifest](nodeWithRelationships: NodeWithRelationships[T]) = {
     // TODO : move sys errors to specific return type
     for {
       n <- add(nodeWithRelationships.node)
@@ -67,7 +67,7 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[String, List[graph
     yield nodeWithRelationships
   }
 
-  def updateNodeWithRelationships[T : Tag : JsonFormat](nodeWithRelationships: NodeWithRelationships[T]) =
+  def updateNodeWithRelationships[T : NodeManifest](nodeWithRelationships: NodeWithRelationships[T]) =
     for {
       n <- update(nodeWithRelationships.node)
     }
@@ -76,12 +76,13 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[String, List[graph
 }
 
 // TOOD relationshipMappings should be injected in some nicer way
-case class EntityRoute[T : Tag : JsonFormat : PathSegment]
-  (relationshipMappings: Map[String, List[graph.Relationship[_, _]]])  {
+case class EntityRoute[T]
+  (relationshipMappings: Map[String, List[graph.Relationship[_, _]]])
+  (implicit nm: NodeManifest[T], val pathSegment: PathSegment[T])  {
+
+  import nm.jsonFormat
 
   val tag = Tag[T]
-
-  val pathSegment = PathSegment[T]
 
   val tableOfContents =
     complete {

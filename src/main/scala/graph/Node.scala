@@ -6,7 +6,7 @@ import spray.json._, DefaultJsonProtocol._
 trait NodeOps[T] {
   def node: Node[T]
 
-  def to[V](implicit ev1: Tag[T], ev2: Tag[V], ev3: Relationship[T, V], ev4: JsonFormat[V])
+  def to[V](implicit ev1: Tag[T], ev2: NodeManifest[V], ev3: Relationship[T, V])
     : GraphM[Option[Node[V]]] =
     lookupEdges[T, V](node.id).flatMap { edges =>
       val nodes: Set[GraphM[Option[Node[V]]]] = edges.map { edge => lookupNode(edge.to) }
