@@ -16,3 +16,4 @@
 - scoverage
 - CI
 - generalize JSON serialization. e.g. Pickle[T]
+- scalariform

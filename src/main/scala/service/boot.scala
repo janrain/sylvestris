@@ -10,10 +10,11 @@ object boot {
 
   def populate =
     for {
-      o <- add(Node[Organization](Id("org1"), Organization("Org 1")))
+      o1 <- add(Node[Organization](Id("org1"), Organization("Org 1")))
+      o2 <- add(Node[Organization](Id("org2"), Organization("Org 2")))
       c <- add(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
-      _ <- link(c, o)
-      _ <- link(o, c)
+      _ <- link(c, o1)
+      _ <- link(o1, o2)
     }
     yield {}
 

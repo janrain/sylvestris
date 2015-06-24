@@ -14,11 +14,12 @@ object Graph {
     }
   }
 
-  case class GEdge(idA: String, tagA: String, idB: String, tagB: String)
+  case class GEdge(label: Option[String], idA: String, tagA: String, idB: String, tagB: String)
 
   object GEdge {
     def apply[T: Tag, U: Tag](edge: Edge[T, U]): GEdge =
       GEdge(
+        edge.label.map(_.v),
         edge.from.v, implicitly[Tag[T]].v,
         edge.to.v, implicitly[Tag[U]].v)
 

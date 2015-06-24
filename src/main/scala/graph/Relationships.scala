@@ -3,28 +3,21 @@ package graph
 import org.reflections.Reflections
 import scalaz._, Scalaz._
 
-sealed class Relationship[T : Tag, U : Tag] {
+sealed class Relationship[T : Tag, U : Tag](
+  val labelUT: Option[Label] = None,
+  val labelTU: Option[Label] = None) {
+
   val tTag = Tag[T]
   val uTag = Tag[U]
 }
 
 class OneToOne[T : Tag, U : Tag] extends Relationship[T, U]
 
-object OneToOne {
-  def apply[T : Tag, U : Tag] = new OneToOne[T, U] {}
-}
-
 class OneToMany[T : Tag, U : Tag] extends Relationship[T, U]
-
-object OneToMany {
-  def apply[T : Tag, U : Tag] = new OneToMany[T, U] {}
-}
 
 class ManyToOne[T : Tag, U : Tag] extends Relationship[T, U]
 
-object ManyToOne {
-  def apply[T : Tag, U : Tag] = new ManyToOne[T, U] {}
-}
+class Parent[T : Tag] extends Relationship[T, T](Some(Label("parent")), Some(Label("child")))
 
 case class RelationshipMappings(packagePrefix: String) {
   // TODO this needs to be done for all relationship types
@@ -42,9 +35,9 @@ object Relationship {
 
   def apply[T : Tag, U : Tag] = new Relationship[T, U]
 
-  implicit def reverseOneToOne[T : Tag, U : Tag](implicit ev: OneToOne[T, U]) = OneToOne[U, T]
+  implicit def reverseOneToOne[T : Tag, U : Tag](implicit ev: OneToOne[T, U]) = new OneToOne[U, T]
 
-  implicit def reverseOneToMany[T : Tag, U : Tag](implicit ev: OneToMany[T, U]) = ManyToOne[U, T]
+  implicit def reverseOneToMany[T : Tag, U : Tag](implicit ev: OneToMany[T, U]) = new ManyToOne[U, T]
 
   def relationship[T, U](implicit ev: Relationship[T, U]) = true
 

@@ -33,7 +33,7 @@ object InMemoryGraph extends Graph {
     this
   }
 
-  def edges(): Set[Edge[_, _]] = gedges.map(e => Edge(Id(e.idA), Id(e.idB)))
+  def edges(): Set[Edge[_, _]] = gedges.map(e => Edge(e.label.map(Label), Id(e.idA), Id(e.idB)))
 
   def addEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph = {
     println(s"adding $edge")
@@ -76,7 +76,7 @@ object InMemoryGraph extends Graph {
   def lookupEdges[T : Tag, U : Tag](id: Id[T]): Set[Edge[T, U]] =
     gedges
       .filter(e => e.idA === id.v && e.tagB === implicitly[Tag[U]].v)
-      .map(e => Edge(id, Id[U](e.idB)))
+      .map(e => Edge(e.label.map(Label), id, Id[U](e.idB)))
 
   def lookupEdges(id: String, tagA: String, tagB: String): Set[GEdge] =
     gedges.filter(e => e.idA === id && e.tagA === tagA && e.tagB === tagB)
@@ -84,7 +84,7 @@ object InMemoryGraph extends Graph {
   def lookupEdgesAll[T : Tag](id: Id[T]): Set[Edge[T, _]] =
     gedges
       .filter(e => e.idA === id.v)
-      .map(e => Edge(id, Id(e.idB)))
+      .map(e => Edge(e.label.map(Label), id, Id(e.idB)))
 
 
 }

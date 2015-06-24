@@ -32,8 +32,8 @@ object GraphM {
         case _: Relationship[T, U]  =>
       }
 
-      g.addEdge(Edge(a.id, b.id))
-      g.addEdge(Edge(b.id, a.id))
+      g.addEdge(Edge(ev.labelTU, a.id, b.id))
+      g.addEdge(Edge(ev.labelUT, b.id, a.id))
     }
 
     // TODO expand this for other OneToMany/ManyToOne
@@ -41,23 +41,27 @@ object GraphM {
       (idA: String, tagA: String, idB: String, tagB: String)
       (relationships: List[Relationship[_, _]])
       : GraphM[Graph] = GraphM { g =>
-      relationships.find(_.uTag.v === tagB) match {
-        case Some(_ : OneToOne[_, _])     =>
+      val relationship: Relationship[_, _] = relationships.find(_.uTag.v === tagB) match {
+        case Some(r : OneToOne[_, _])     =>
           g.removeEdges(idA, tagA, tagB)
           // for all x nodes b links to, remove edges from x to tagB
           g.lookupEdges(idB, tagB, tagA).foreach(e => g.removeEdges(e.idB, tagA, tagB))
           g.removeEdges(idB, tagB, tagA)
-        case Some(_ : Relationship[_, _]) =>
+          r
+        case Some(r : Relationship[_, _]) => r
         case None => sys.error(s"no relationship between $tagA and $tagB")
       }
-      g.addEdge(GEdge(idA, tagA, idB, tagB))
-      g.addEdge(GEdge(idB, tagB, idA, tagA))
+      g.addEdge(GEdge(relationship.labelTU.map(_.v), idA, tagA, idB, tagB))
+      g.addEdge(GEdge(relationship.labelUT.map(_.v), idB, tagB, idA, tagA))
     }
 
     def remove[T : NodeManifest](node: Id[T]): GraphM[Graph] = GraphM(g => g.removeNode(node))
 
-    def unlink[T : Tag, U : Tag](a: Node[T], b: Node[U]): GraphM[Graph] =
-      GraphM(g => g.removeEdge(Edge(a.id, b.id)))
+    def unlink[T : Tag, U : Tag](a: Node[T], b: Node[U])(implicit r: Relationship[T, U]): GraphM[Graph] =
+      GraphM { g =>
+        g.removeEdge(Edge(r.labelTU, a.id, b.id))
+        g.removeEdge(Edge(r.labelUT, b.id, a.id))
+      }
 
     def lookupNode[T : NodeManifest](id: Id[T]): GraphM[Option[Node[T]]] = GraphM(g => g.lookupNode(id))
 
