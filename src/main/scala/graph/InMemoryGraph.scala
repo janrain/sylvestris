@@ -1,16 +1,33 @@
 package graph
 
-import Graph._
-import scalaz.std._, string._, anyVal._
+import scalaz.std.anyVal._
 import scalaz.syntax.equal._
 import spray.json._
 
 object InMemoryGraph extends Graph {
+  case class GNode(id: Id, tag: Tag, content: String)
+
+  object GNode {
+    def apply[T : NodeManifest](node: Node[T]): GNode = {
+      GNode(node.id, NodeManifest[T].tag, node.content.toJson(NodeManifest[T].jsonFormat).compactPrint)
+    }
+  }
+
   // TODO Make gnodes a Map
   var gnodes: List[GNode] = Nil
-  var gedges: Set[GEdge] = Set.empty
+  var gedges: Set[Edge] = Set.empty
 
-  def nodes(): Set[Node[_]] = gnodes.map(n => Node(Id(n.id), n.content)).toSet
+  def nodes[T : NodeManifest](): Set[Node[T]] = gnodes
+    .filter(_.tag === NodeManifest[T].tag)
+    .map(n => Node[T](n.id, n.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat)))
+    .toSet
+
+  // TODO check found type
+  def lookupNode[T : NodeManifest](id: Id): Option[Node[T]] = {
+    gnodes.find(n => n.id === id && n.tag === NodeManifest[T].tag).map {
+      found => Node[T](id, found.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
+    }
+  }
 
   def addNode[T : NodeManifest](node: Node[T]): Node[T] = {
     println(s"adding $node")
@@ -20,71 +37,42 @@ object InMemoryGraph extends Graph {
 
   def updateNode[T : NodeManifest](node: Node[T]): Node[T] = {
     println(s"updating $node")
-    val index = gnodes.indexWhere(_.id === node.id.v)
+    val index = gnodes.indexWhere(_.id === node.id)
     if (index === -1) sys.error("node not found")
     gnodes = gnodes.updated(index, GNode(node))
     node
   }
 
-  def removeNode[T : NodeManifest](id: Id[T]): Graph = {
+  def removeNode[T : NodeManifest](id: Id): Graph = {
     println(s"remove $id")
-    gnodes = gnodes.filterNot(_.id === id.v)
-    gedges = gedges.filterNot(e => e.idA === id.v || e.idB === id.v)
+    val tag = NodeManifest[T].tag
+    gnodes = gnodes.filterNot(n => n.id === id && n.tag === tag)
+    gedges = gedges.filterNot(e => (e.idA === id && e.tagA === tag) || (e.idB === id && e.tagB === tag))
     this
   }
 
-  def edges(): Set[Edge[_, _]] = gedges.map(e => Edge(e.label.map(Label), Id(e.idA), Id(e.idB)))
+  def lookupEdges(id: Id, tag: Tag): Set[Edge] = gedges.filter(e => e.idA === id && e.tagA === tag)
 
-  def addEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph = {
-    println(s"adding $edge")
-    gedges += GEdge(edge)
+  def lookupEdges(idA: Id, tagA: Tag, tagB: Tag): Set[Edge] =
+    gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB)
+
+
+  def addEdges(edges: Set[Edge]): Graph = {
+    println(s"adding $edges")
+    gedges ++= edges
     this
   }
 
-  def addEdge(gedge: GEdge): Graph = {
-    println(s"adding $gedge")
-    gedges += gedge
+  def removeEdges(edges: Set[Edge]): Graph = {
+    println(s"remove $edges")
+    gedges = gedges -- edges
     this
   }
 
-  def removeEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph = {
-    println(s"remove $edge")
-    gedges = gedges.filterNot(_ === GEdge(edge))
+  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): Graph = {
+    println(s"removing edges for $idA, $tagA, $tagB")
+    gedges = gedges.filterNot(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB)
     this
   }
-
-  def removeEdges[T : Tag, U : Tag](id: Id[T]): Graph = {
-    println(s"removing some edges for $id")
-    gedges = gedges.filterNot(e => e.idA === id.v && e.tagA === Tag[T].v && e.tagB === Tag[U].v)
-    this
-  }
-
-  def removeEdges(id: String, tagA: String, tagB: String): Graph = {
-    println(s"removing some edges for $id")
-    gedges = gedges.filterNot(e => e.idA === id && e.tagA === tagA && e.tagB === tagB)
-    this
-  }
-
-  // TODO check found type
-  def lookupNode[T](id: Id[T])(implicit nm: NodeManifest[T]): Option[Node[T]] = {
-    import nm.jsonFormat
-    gnodes.find(_.id === id.v).map {
-      found => Node[T](id, found.content.parseJson.convertTo[T])
-    }
-  }
-
-  def lookupEdges[T : Tag, U : Tag](id: Id[T]): Set[Edge[T, U]] =
-    gedges
-      .filter(e => e.idA === id.v && e.tagB === implicitly[Tag[U]].v)
-      .map(e => Edge(e.label.map(Label), id, Id[U](e.idB)))
-
-  def lookupEdges(id: String, tagA: String, tagB: String): Set[GEdge] =
-    gedges.filter(e => e.idA === id && e.tagA === tagA && e.tagB === tagB)
-
-  def lookupEdgesAll[T : Tag](id: Id[T]): Set[Edge[T, _]] =
-    gedges
-      .filter(e => e.idA === id.v)
-      .map(e => Edge(e.label.map(Label), id, Id(e.idB)))
-
 
 }

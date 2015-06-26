@@ -1,9 +1,9 @@
 package graph
 
-object Tag {
-  def apply[T : Tag] = implicitly[Tag[T]]
+import scalaz.Equal
 
-  implicit def fromManifest[T : NodeManifest]: Tag[T] = implicitly[NodeManifest[T]].tag
+object Tag {
+  implicit val eqInstance = Equal.equalA[Tag]
 }
 
-case class Tag[T](v: String)
+case class Tag(v: String)

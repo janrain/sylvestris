@@ -19,7 +19,7 @@ case class Client(host: Uri.Host, port: Int = 80, scheme: String = "http")(
     path = Path("/api/") ++ v)
 
   def get[T : PathSegment : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]]
-    (id: Id[T]): Future[NodeWithRelationships[T]] = {
+    (id: Id): Future[NodeWithRelationships[T]] = {
     val pipeline: HttpRequest => Future[NodeWithRelationships[T]] =
       sendReceive ~> unmarshal[NodeWithRelationships[T]]
 

@@ -5,11 +5,11 @@ import model.relationships._
 import spray.json._, DefaultJsonProtocol._
 
 trait View[T, U] {
-  def get(id: Id[T]): GraphM[U]
+  def get(id: Id): GraphM[U]
 }
 
 trait Update[T, U] {
-  def update(id: Id[T], data: U): GraphM[U]
+  def update(id: Id, data: U): GraphM[U]
 }
 
 case class CustomData(orgName: String, customerName: String)
@@ -19,23 +19,23 @@ object CustomData {
 }
 
 object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
-  def get(id: Id[Organization]): GraphM[CustomData] =
+  def get(id: Id): GraphM[CustomData] =
     for {
-      org <- lookupNode(id)
+      org <- lookupNode[Organization](id)
       // TODO get is bad!
       customer <- org.get.to[Customer]
     }
     yield CustomData(org.get.content.name, customer.get.content.name)
 
 
-  def update(id: Id[Organization], data: CustomData): GraphM[CustomData] =
+  def update(id: Id, data: CustomData): GraphM[CustomData] =
     for {
-      orgOpt <- lookupNode(id)
+      orgOpt <- lookupNode[Organization](id)
       org = orgOpt.get
       customerOpt <- org.to[Customer]
       customer = customerOpt.get
-      _ <- GraphM.update(org.copy(content = org.content.copy(name = data.orgName)))
-      _ <- GraphM.update(customer.copy(content = customer.content.copy(name = data.customerName)))
+      _ <- updateNode(org.copy(content = org.content.copy(name = data.orgName)))
+      _ <- updateNode(customer.copy(content = customer.content.copy(name = data.customerName)))
     }
     yield data
 }

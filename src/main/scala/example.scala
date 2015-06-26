@@ -8,10 +8,11 @@ object example {
 
   val eg1 =
     for {
-      _ <- add(org)
-      _ <- add(customer)
-      _ <- link(org, customer)
-      foundOrg <- lookupNode(org.id).map(_.get)
+      _ <- addNode(org)
+      _ <- addNode(customer)
+      // TODO : relationships API
+      // _ <- link(org, customer)
+      foundOrg <- lookupNode[Organization](org.id).map(_.get)
       linkedCustomer <- foundOrg.to[Customer]
     } yield (foundOrg, linkedCustomer)
 

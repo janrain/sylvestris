@@ -1,3 +1,3 @@
 package graph
 
-case class Label(v: String)
+case class Label(v: String) extends AnyVal

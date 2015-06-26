@@ -16,11 +16,13 @@ object NodeRoute {
 
   import pathSegments._
 
-  val nodeRoutes = List(
+  val nodeRoutes: List[EntityRoute[_]] = List(
     EntityRoute[Customer](relationships.relationshipMappings),
     EntityRoute[Organization](relationships.relationshipMappings))
 
-  val pathSegmentToTag = nodeRoutes.map(i => i.pathSegment.v -> i.tag.v).toMap
+  val pathSegmentToTag: Map[PathSegment[_], Tag] = nodeRoutes
+    .map(i => i.pathSegment -> i.tag)
+    .toMap
 }
 
 object HandleExceptions extends Directive0 {
@@ -43,7 +45,7 @@ class ServiceActor extends Actor with HttpService with Directives {
       NodeRoute.nodeRoutes.map(_.crudRoute).reduce(_ ~ _) ~
       // TODO clean this up
       pathPrefix("org_cust_lens")(
-        path(new IdMatcher[Organization])(id =>
+        path(idMatcher)(id =>
           get(
             complete(CustomLens.get(id).run(InMemoryGraph))) ~
           put(

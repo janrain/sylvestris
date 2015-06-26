@@ -3,41 +3,41 @@ package graph
 import org.reflections.Reflections
 import scalaz._, Scalaz._
 
-sealed class Relationship[T : Tag, U : Tag](
-  val labelUT: Option[Label] = None,
-  val labelTU: Option[Label] = None) {
-
-  val tTag = Tag[T]
-  val uTag = Tag[U]
+sealed class Relationship[T : NodeManifest, U : NodeManifest] {
+  val tNodeManifest = NodeManifest[T]
+  val uNodeManifest = NodeManifest[U]
 }
 
-class OneToOne[T : Tag, U : Tag] extends Relationship[T, U]
+// trait
 
-class OneToMany[T : Tag, U : Tag] extends Relationship[T, U]
+class OneToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
 
-class ManyToOne[T : Tag, U : Tag] extends Relationship[T, U]
+class OneToMany[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
 
-class Parent[T : Tag] extends Relationship[T, T](Some(Label("parent")), Some(Label("child")))
+class ManyToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
+
+class Tree[T : NodeManifest] extends Relationship[T, T]
 
 case class RelationshipMappings(packagePrefix: String) {
   // TODO this needs to be done for all relationship types
-  val mapping = new Reflections(packagePrefix).getSubTypesOf(classOf[OneToOne[_, _]]).toArray.toList
-    .map { i =>
-      val z = i.asInstanceOf[Class[OneToOne[_, _]]].newInstance
-      Map(
-        z.tTag.v -> List[Relationship[_, _]](z),
-        z.uTag.v -> List[Relationship[_, _]](new OneToOne()(z.uTag, z.tTag)))
-    }
-    .suml
+  val mapping: Map[Tag, List[Relationship[_, _]]] =
+    new Reflections(packagePrefix).getSubTypesOf(classOf[OneToOne[_, _]]).toArray.toList
+      .map { i =>
+        val z = i.asInstanceOf[Class[OneToOne[_, _]]].newInstance
+        Map(
+          z.tNodeManifest.tag -> List[Relationship[_, _]](z),
+          z.uNodeManifest.tag -> List[Relationship[_, _]](new OneToOne()(z.uNodeManifest, z.tNodeManifest)))
+      }
+      .suml
 }
 
 object Relationship {
 
-  def apply[T : Tag, U : Tag] = new Relationship[T, U]
+  def apply[T : NodeManifest, U : NodeManifest : Relationship[T, ?]] = implicitly[Relationship[T, U]]
 
-  implicit def reverseOneToOne[T : Tag, U : Tag](implicit ev: OneToOne[T, U]) = new OneToOne[U, T]
+  implicit def reverseOneToOne[T : NodeManifest, U : NodeManifest](implicit ev: OneToOne[T, U]) = new OneToOne[U, T]
 
-  implicit def reverseOneToMany[T : Tag, U : Tag](implicit ev: OneToMany[T, U]) = new ManyToOne[U, T]
+  implicit def reverseOneToMany[T : NodeManifest, U : NodeManifest](implicit ev: OneToMany[T, U]) = new ManyToOne[U, T]
 
   def relationship[T, U](implicit ev: Relationship[T, U]) = true
 

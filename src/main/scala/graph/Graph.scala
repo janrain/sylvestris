@@ -1,45 +1,16 @@
 package graph
 
-import Graph._
-import scalaz.Equal
-import spray.json._
-
-object Graph {
-  case class GNode(id: String, tag: String, content: String)
-
-  object GNode {
-    def apply[T](node: Node[T])(implicit nm: NodeManifest[T]): GNode = {
-      import nm.jsonFormat
-      GNode(node.id.v, implicitly[Tag[T]].v, node.content.toJson.compactPrint)
-    }
-  }
-
-  case class GEdge(label: Option[String], idA: String, tagA: String, idB: String, tagB: String)
-
-  object GEdge {
-    def apply[T: Tag, U: Tag](edge: Edge[T, U]): GEdge =
-      GEdge(
-        edge.label.map(_.v),
-        edge.from.v, implicitly[Tag[T]].v,
-        edge.to.v, implicitly[Tag[U]].v)
-
-    implicit val eqInstance = Equal.equalA[GEdge]
-  }
-}
+// TODO : revisit the returning of Graph; might want \/ of some sort
 
 trait Graph {
-  def nodes(): Set[Node[_]]
+  def nodes[T : NodeManifest](): Set[Node[T]]
+  def lookupNode[T : NodeManifest](id: Id): Option[Node[T]]
   def addNode[T : NodeManifest](node: Node[T]): Node[T]
   def updateNode[T : NodeManifest](node: Node[T]): Node[T]
-  def removeNode[T : NodeManifest](id: Id[T]): Graph
-  def edges(): Set[Edge[_, _]]
-  def addEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph
-  def addEdge(gedge: GEdge): Graph
-  def removeEdge[T : Tag, U : Tag](edge: Edge[T, U]): Graph
-  def removeEdges[T : Tag, U : Tag](id: Id[T]): Graph
-  def removeEdges(id: String, tagA: String, tagB: String): Graph
-  def lookupNode[T : NodeManifest](id: Id[T]): Option[Node[T]]
-  def lookupEdges[T : Tag, U : Tag](id: Id[T]): Set[Edge[T, U]]
-  def lookupEdges(id: String, tagA: String, tagB: String): Set[GEdge]
-  def lookupEdgesAll[T : Tag](id: Id[T]): Set[Edge[T, _]]
+  def removeNode[T : NodeManifest](id: Id): Graph
+  def lookupEdges(id: Id, tag: Tag): Set[Edge]
+  def lookupEdges(idA: Id, tagA: Tag, tagB: Tag): Set[Edge]
+  def addEdges(edges: Set[Edge]): Graph
+  def removeEdges(edges: Set[Edge]): Graph
+  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): Graph
 }

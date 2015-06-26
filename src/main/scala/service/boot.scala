@@ -4,17 +4,19 @@ import akka.actor.{ Actor, ActorSystem, Props }
 import spray.can.Http
 import akka.io.IO
 import graph._, GraphM._
-import model._, relationships._
+import model._
 
 object boot {
 
   def populate =
     for {
-      o1 <- add(Node[Organization](Id("org1"), Organization("Org 1")))
-      o2 <- add(Node[Organization](Id("org2"), Organization("Org 2")))
-      c <- add(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
-      _ <- link(c, o1)
-      _ <- link(o1, o2)
+      o1 <- addNode(Node[Organization](Id("org1"), Organization("Org 1")))
+      o2 <- addNode(Node[Organization](Id("org2"), Organization("Org 2")))
+      c <- addNode(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
+      // TODO : change to Relationship layer API
+      _ <- addEdges(Set(
+        Edge(None, c.id, NodeManifest[Customer].tag, o1.id, NodeManifest[Organization].tag),
+        Edge(None, o1.id, NodeManifest[Organization].tag, c.id, NodeManifest[Customer].tag)))
     }
     yield {}
 
