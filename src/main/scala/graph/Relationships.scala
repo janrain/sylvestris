@@ -8,13 +8,15 @@ sealed class Relationship[T : NodeManifest, U : NodeManifest] {
   val uNodeManifest = NodeManifest[U]
 }
 
-// trait
+class ToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
 
-class OneToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
+class ToMany[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
 
-class OneToMany[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
+class OneToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
 
-class ManyToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
+class OneToMany[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
+
+class ManyToOne[T : NodeManifest, U : NodeManifest] extends ToMany[T, U]
 
 class Tree[T : NodeManifest] extends Relationship[T, T]
 
@@ -30,6 +32,10 @@ case class RelationshipMappings(packagePrefix: String) {
       }
       .suml
 }
+
+//object ToOne {
+//  def apply[T : NodeManifest, U : NodeManifest : ToOne[T, ?]] = implicitly[ToOne[T, U]]
+//}
 
 object Relationship {
 

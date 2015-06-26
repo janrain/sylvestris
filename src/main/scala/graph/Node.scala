@@ -5,12 +5,22 @@ import GraphM._
 abstract class NodeOps[T : NodeManifest] {
   def node: Node[T]
 
-  def to[U : NodeManifest : Relationship[T, ?]]: GraphM[Option[Node[U]]] =
-    lookupEdges(node.id, Relationship[T, U].tNodeManifest.tag).flatMap { edges =>
-      val nodes: Set[GraphM[Option[Node[U]]]] = edges.map { edge => lookupNode[U](edge.idB) }
-      // TODO : head unsafe, solve later
-      nodes.head
-    }
+  def to[U : NodeManifest : ToOne[T, ?]] =
+    for {
+      edges <- lookupEdges(node.id, Relationship[T, U].tNodeManifest.tag)
+      nodes <- sequence(edges.map { edge => lookupNode[U](edge.idB) })
+    } yield nodes.flatten.headOption
+
+//  def to[U : NodeManifest : ToMany[T, ?]] =
+//    for {
+//      edges <- lookupEdges(node.id, Relationship[T, U].tNodeManifest.tag)
+//      nodes <- sequence(edges.map { edge => lookupNode[U](edge.idB) })
+//    } yield nodes.flatten
+
+
+//  def to[U : NodeManifest : ToOne[T, ?]](Option[U]) = ???
+//
+//  def to[U : NodeManifest : ToMany[T, ?]](Set[U]) = ???
 
   // def link[U](implicit ev1: Tag[T], ev2: NodeManifest[U], ev3: Relationship[T, U])
   //   : GraphM[Unit] = {
@@ -36,7 +46,6 @@ abstract class NodeOps[T : NodeManifest] {
   // def parent(implicit ev1: Tag[T], ev2: NodeManifest[T], ev3: Parent[T])
   //
   // def child(implicit ev1: Tag[T], ev2: NodeManifest[T], ev3: Children[T])
-
 }
 
 object Node {

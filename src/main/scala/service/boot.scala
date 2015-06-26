@@ -14,6 +14,10 @@ object boot {
       o2 <- addNode(Node[Organization](Id("org2"), Organization("Org 2")))
       c <- addNode(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
       // TODO : change to Relationship layer API
+      // _ <- o1.to[Customer](Some(c))
+      // _ <- o2.tree.children(Set(o1))
+      //  OR
+      // _ <- o1.tree.parent(Option(o2))
       _ <- addEdges(Set(
         Edge(None, c.id, NodeManifest[Customer].tag, o1.id, NodeManifest[Organization].tag),
         Edge(None, o1.id, NodeManifest[Organization].tag, c.id, NodeManifest[Customer].tag)))
@@ -34,3 +38,27 @@ object boot {
   }
 
 }
+
+/*
+* 
+* For toMany relationships
+* def apply[T](nodes: Set[T]) = clears if empty, else replaces
+*
+* For toOne relationships
+* def apply[T](nodes: Option[T]) = clears if empty, else replaces
+* 
+* To relationships:
+* * OneToOne
+* * OneToMany
+* * ManyToOne
+* * ManyToMany
+*
+* Operations:
+*
+* Update
+* Replace
+* AddOrUpdate
+* Remove
+*
+*
+*/
