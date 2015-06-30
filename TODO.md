@@ -13,6 +13,7 @@
 - add type level tests for GraphM linking (shapeless' illtyped)
 - s/Entity/Node/g
 - scoverage
+- generate RAML
 - CI
 - generalize JSON serialization. e.g. Pickle[T]
 - scalariform
