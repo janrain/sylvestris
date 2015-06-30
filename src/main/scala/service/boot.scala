@@ -12,15 +12,11 @@ object boot {
     for {
       o1 <- addNode(Node[Organization](Id("org1"), Organization("Org 1")))
       o2 <- addNode(Node[Organization](Id("org2"), Organization("Org 2")))
+      o3 <- addNode(Node[Organization](Id("org3"), Organization("Org 3")))
       c <- addNode(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
-      // TODO : change to Relationship layer API
-      // _ <- o1.to[Customer](Some(c))
-      // _ <- o2.tree.children(Set(o1))
-      //  OR
-      // _ <- o1.tree.parent(Option(o2))
-      _ <- addEdges(Set(
-        Edge(None, c.id, NodeManifest[Customer].tag, o1.id, NodeManifest[Organization].tag),
-        Edge(None, o1.id, NodeManifest[Organization].tag, c.id, NodeManifest[Customer].tag)))
+      _ <- o1.toOne[Customer](Some(c))
+      _ <- o2.tree.children(Set(o1))
+      _ <- o3.tree.parent(Option(o1))
     }
     yield {}
 

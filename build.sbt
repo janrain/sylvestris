@@ -52,4 +52,4 @@ libraryDependencies ++= Seq(
   "org.reflections" % "reflections" % "0.9.10",
   "org.slf4j" % "slf4j-api" % "1.7.12")
 
-initialCommands := "import graph._, GraphM._, Relationship._, model._, relationships._, shapeless._"
+initialCommands := "import graph._, GraphM._, Relationship._, model._, shapeless._"

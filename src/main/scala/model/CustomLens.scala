@@ -1,7 +1,6 @@
 package model
 
 import graph._, GraphM._
-import model.relationships._
 import spray.json._, DefaultJsonProtocol._
 
 trait View[T, U] {
@@ -23,7 +22,7 @@ object CustomLens extends View[Organization, CustomData] with Update[Organizatio
     for {
       org <- lookupNode[Organization](id)
       // TODO get is bad!
-      customer <- org.get.to[Customer]
+      customer <- org.get.toOne[Customer]
     }
     yield CustomData(org.get.content.name, customer.get.content.name)
 
@@ -32,7 +31,7 @@ object CustomLens extends View[Organization, CustomData] with Update[Organizatio
     for {
       orgOpt <- lookupNode[Organization](id)
       org = orgOpt.get
-      customerOpt <- org.to[Customer]
+      customerOpt <- org.toOne[Customer]
       customer = customerOpt.get
       _ <- updateNode(org.copy(content = org.content.copy(name = data.orgName)))
       _ <- updateNode(customer.copy(content = customer.content.copy(name = data.customerName)))

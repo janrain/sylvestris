@@ -97,24 +97,12 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[Tag, List[graph.Re
         val (tag, id) = splitNodePath(relationship.nodePath)
         val relationships: List[graph.Relationship[_, _]] = relationshipMappings
           .getOrElse(nm.tag, sys.error("Node has no relationships"))
-        // TODO expand this for other OneToMany/ManyToOne
-        val op: GraphM[Unit] = relationships.find(_.uNodeManifest.tag === tag) match {
-          case Some(r : OneToOne[_, _]) =>
-            for {
-              _ <- removeEdges(n.id, nm.tag, tag)
-              // for all x nodes b links to, remove edges from x to tagB
-              e <- lookupEdges(id, tag, nm.tag)
-              _ <- removeEdges(e)
-              _ <- removeEdges(id, tag, nm.tag)
-            } yield {}
+        // TODO expand this for other OneToMany/Tree
+        relationships.find(_.uNodeManifest.tag === tag) match {
+          case Some(r : ToOne[_, _]) => n.toOne(Some(id))(r)
           case Some(_ : graph.Relationship[_, _]) => GraphM(())
           case None => sys.error(s"no relationship between ${nm.tag} and $tag")
         }
-        for {
-          _ <- op
-          // TODO : add Label to Relationship
-          _ <- addEdges(Set(Edge(None, n.id, nm.tag, id, tag)))
-        } yield {}
       })
     }
     yield nodeWithRelationships

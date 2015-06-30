@@ -17,8 +17,8 @@ object NodeRoute {
   import pathSegments._
 
   val nodeRoutes: List[EntityRoute[_]] = List(
-    EntityRoute[Customer](relationships.relationshipMappings),
-    EntityRoute[Organization](relationships.relationshipMappings))
+    EntityRoute[Customer](relationshipMappings),
+    EntityRoute[Organization](relationshipMappings))
 
   val pathSegmentToTag: Map[PathSegment[_], Tag] = nodeRoutes
     .map(i => i.pathSegment -> i.tag)

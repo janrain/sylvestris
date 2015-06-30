@@ -18,6 +18,7 @@
 - generalize JSON serialization. e.g. Pickle[T]
 - scalariform
 - Json4s. what was the error we ran into? we might have changed enough that it's no longer an issue?
+- Handle error cases
 
 =====
 

@@ -24,9 +24,11 @@ object GraphM {
 
     def removeNode[T : NodeManifest](node: Id): GraphM[Graph] = GraphM(_.removeNode(node))
 
-    def lookupEdges(id: Id, tag: Tag): GraphM[Set[Edge]] = GraphM(_.lookupEdges(id, tag))
+    def lookupEdges(id: Id, tag: Tag): GraphM[Set[Edge]] =
+      GraphM(_.lookupEdges(id, tag))
 
-    def lookupEdges(idA: Id, tagA: Tag, tagB: Tag): GraphM[Set[Edge]] = GraphM(_.lookupEdges(idA, tagA, tagB))
+    def lookupEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): GraphM[Set[Edge]] =
+      GraphM(_.lookupEdges(label, idA, tagA, tagB))
 
     def addEdges(edges: Set[Edge]): GraphM[Graph] = GraphM(_.addEdges(edges))
 

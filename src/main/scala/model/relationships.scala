@@ -2,7 +2,7 @@ package model
 
 import graph._
 
-object relationships {
+trait Relationships {
   implicit object orgCustomer extends OneToOne[Organization, Customer]
 
   implicit object orgTree extends Tree[Organization]
@@ -11,5 +11,5 @@ object relationships {
   // representing a hierarchy will lead to implicit ambiguity for graph linking.
   // consider moving to separate graph and relationship layers.
 
-  val relationshipMappings = RelationshipMappings(getClass.getPackage.getName).mapping
+  lazy val relationshipMappings = RelationshipMappings(getClass.getPackage.getName).mapping
 }

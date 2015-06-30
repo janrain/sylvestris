@@ -6,6 +6,10 @@ import scalaz._, Scalaz._
 sealed class Relationship[T : NodeManifest, U : NodeManifest] {
   val tNodeManifest = NodeManifest[T]
   val uNodeManifest = NodeManifest[U]
+
+  case class Labels(`t->u`: Label, `u->t`: Label)
+
+  def label: Option[Labels] = None
 }
 
 class ToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
@@ -14,15 +18,15 @@ class ToMany[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
 
 class OneToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
 
-class OneToMany[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
+class OneToMany[T : NodeManifest, U : NodeManifest] extends ToMany[T, U]
 
-class ManyToOne[T : NodeManifest, U : NodeManifest] extends ToMany[T, U]
+class ManyToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
 
 class Tree[T : NodeManifest] extends Relationship[T, T]
 
 case class RelationshipMappings(packagePrefix: String) {
   // TODO this needs to be done for all relationship types
-  val mapping: Map[Tag, List[Relationship[_, _]]] =
+  lazy val mapping: Map[Tag, List[Relationship[_, _]]] =
     new Reflections(packagePrefix).getSubTypesOf(classOf[OneToOne[_, _]]).toArray.toList
       .map { i =>
         val z = i.asInstanceOf[Class[OneToOne[_, _]]].newInstance

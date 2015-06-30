@@ -1,6 +1,7 @@
 package graph
 
 import scalaz.std.anyVal._
+import scalaz.std.option._
 import scalaz.syntax.equal._
 import spray.json._
 
@@ -51,10 +52,11 @@ object InMemoryGraph extends Graph {
     this
   }
 
-  def lookupEdges(id: Id, tag: Tag): Set[Edge] = gedges.filter(e => e.idA === id && e.tagA === tag)
+  def lookupEdges(id: Id, tag: Tag): Set[Edge] =
+    gedges.filter(e => e.idA === id && e.tagA === tag)
 
-  def lookupEdges(idA: Id, tagA: Tag, tagB: Tag): Set[Edge] =
-    gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB)
+  def lookupEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): Set[Edge] =
+    gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB && e.label === label)
 
 
   def addEdges(edges: Set[Edge]): Graph = {
