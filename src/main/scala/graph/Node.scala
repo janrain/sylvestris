@@ -13,8 +13,8 @@ abstract class NodeOps[T : NodeManifest] {
   private def to[U : NodeManifest : Relationship[T, ?]] = {
     val rel = Relationship[T, U]
     for {
-      edges <- lookupEdges(rel.label.map(_.`t->u`), node.id, rel.tNodeManifest.tag, rel.uNodeManifest.tag)
-      nodes <- sequence(edges.map { edge => lookupNode[U](edge.idB) })
+      edges <- getEdges(rel.label.map(_.`t->u`), node.id, rel.tNodeManifest.tag, rel.uNodeManifest.tag)
+      nodes <- sequence(edges.map { edge => getNode[U](edge.idB) })
     } yield nodes.flatten.toSet
   }
 
@@ -49,7 +49,7 @@ abstract class NodeOps[T : NodeManifest] {
     relationship match {
       case r : ToOne[_, _] =>
         for {
-          edges <- lookupEdges(relationship.label.map(_.`u->t`), idU, tagU, tagT)
+          edges <- getEdges(relationship.label.map(_.`u->t`), idU, tagU, tagT)
           _ <- removeEdges(edges.map(e => Edge(e.label, e.idB, e.tagB, e.idA, e.tagA)))
           _ <- removeEdges(idU, tagU, tagT)
         } yield {}

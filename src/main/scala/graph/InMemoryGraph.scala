@@ -24,7 +24,7 @@ object InMemoryGraph extends Graph {
     .toSet
 
   // TODO check found type
-  def lookupNode[T : NodeManifest](id: Id): Option[Node[T]] = {
+  def getNode[T : NodeManifest](id: Id): Option[Node[T]] = {
     gnodes.find(n => n.id === id && n.tag === NodeManifest[T].tag).map {
       found => Node[T](id, found.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
     }
@@ -52,10 +52,10 @@ object InMemoryGraph extends Graph {
     this
   }
 
-  def lookupEdges(id: Id, tag: Tag): Set[Edge] =
+  def getEdges(id: Id, tag: Tag): Set[Edge] =
     gedges.filter(e => e.idA === id && e.tagA === tag)
 
-  def lookupEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): Set[Edge] =
+  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): Set[Edge] =
     gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB && e.label === label)
 
 

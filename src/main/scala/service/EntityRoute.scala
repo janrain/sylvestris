@@ -63,8 +63,8 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[Tag, List[graph.Re
 
   def nodeWithRelationships[T : NodeManifest](id: Id) =
     for {
-      n <- lookupNode(id)
-      e <- lookupEdges(id, NodeManifest[T].tag)
+      n <- getNode(id)
+      e <- getEdges(id, NodeManifest[T].tag)
     }
     yield n.map(v => NodeWithRelationships[T](v, e.map(e => Relationship(s"/api/${e.tagB.v}/${e.idB.v}"))))
 
@@ -78,7 +78,7 @@ case class NodeWithRelationshipsOps(relationshipMappings: Map[Tag, List[graph.Re
     //     case Some(r : OneToOne[_, _])     =>
     //       g.removeEdges(idA, tagA, tagB)
     //       // for all x nodes b links to, remove edges from x to tagB
-    //       g.lookupEdges(idB, tagB, tagA).foreach(e => g.removeEdges(e.idB, tagA, tagB))
+    //       g.getEdges(idB, tagB, tagA).foreach(e => g.removeEdges(e.idB, tagA, tagB))
     //       g.removeEdges(idB, tagB, tagA)
     //       r
     //     case Some(r : Relationship[_, _]) => r

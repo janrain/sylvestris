@@ -20,7 +20,7 @@ object CustomData {
 object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
   def get(id: Id): GraphM[CustomData] =
     for {
-      org <- lookupNode[Organization](id)
+      org <- getNode[Organization](id)
       // TODO get is bad!
       customer <- org.get.toOne[Customer]
     }
@@ -29,7 +29,7 @@ object CustomLens extends View[Organization, CustomData] with Update[Organizatio
 
   def update(id: Id, data: CustomData): GraphM[CustomData] =
     for {
-      orgOpt <- lookupNode[Organization](id)
+      orgOpt <- getNode[Organization](id)
       org = orgOpt.get
       customerOpt <- org.toOne[Customer]
       customer = customerOpt.get

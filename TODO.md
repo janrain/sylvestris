@@ -1,6 +1,5 @@
+- move notion of edge pairs into Graph and GraphM
 - data validations
-- edge labels e.g. parent/child
-- separate out typed and untyped access for GraphM and Graph
 - pull PathSegment and NodeWithRelationships out of service and move them into service-common
 - separate out into proper sbt sub-projects
 - external API client -- We have GET, need PUT and POST
