@@ -1,10 +1,12 @@
+- namespace example project packages with example
+- name sylvestris throughout
 - move notion of edge pairs into Graph and GraphM
 - data validations
 - pull PathSegment and NodeWithRelationships out of service and move them into service-common
 - separate out into proper sbt sub-projects
 - external API client -- We have GET, need PUT and POST
 - constrain allowed relationships on entity CRUD routes -- POST is done, need PUT
-- Add relationship labels to web API
+- add relationship labels to web API
 - how do we migrate current data to this model?
 - consider Triggered Views within this world
 - identifiers should be unique; add constraints for enforcement
@@ -14,6 +16,7 @@
 - add type level tests for GraphM linking (shapeless' illtyped)
 - s/Entity/Node/g
 - scoverage
+- wart remover
 - generate RAML
 - CI
 - generalize JSON serialization. e.g. Pickle[T]
