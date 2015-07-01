@@ -1,9 +1,6 @@
 - CRUD routes -- GET & POST are done, need PUT
     - add relationship labels to web API
 - external API client -- We have GET, need PUT, POST, custom lenses
-- rename repo to sylvestris
-- s/Entity/Node/g
-    - rename EntityRoute to NodeRoute
 - example service is still kludgey
 - move notion of edge pairs into Graph and GraphM
 - how do we migrate current data to this model?

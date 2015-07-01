@@ -7,6 +7,30 @@ import spray.routing.directives.ExecutionDirectives._
 import spray.routing._
 import shapeless.HNil
 
+object NodeRoutes {
+
+  object pathSegments {
+    implicit val customer = PathSegment[Customer]("customers")
+    implicit val organization = PathSegment[Organization]("orgs")
+  }
+
+  import pathSegments._
+
+  val nodeRoutes: List[NodeRoute[_]] = List(
+    NodeRoute[Customer](),
+    NodeRoute[Organization]())
+
+  val pathSegmentToTag: Map[PathSegment[_], Tag] = nodeRoutes
+      .map(i => i.pathSegment -> i.tag)
+      .toMap
+
+  val klass = getClass
+
+  // TODO : stringly package
+  val nodeWithRelationshipsOps: NodeWithRelationshipsOps =
+    NodeWithRelationshipsOps(RelationshipMappings("sylvestris.example").mapping, pathSegmentToTag)
+}
+
 object HandleExceptions extends Directive0 {
   def happly(f: HNil => Route): Route = handleExceptions(handler)(f(HNil))
 
@@ -16,7 +40,7 @@ object HandleExceptions extends Directive0 {
   }
 }
 
-class ServiceActor(nodeRoutes: List[EntityRoute[_]], nodeWithRelationshipsOps: NodeWithRelationshipsOps)
+class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: NodeWithRelationshipsOps)
   extends Actor with HttpService with Directives {
 
   implicit lazy val actorRefFactory = context

@@ -8,7 +8,7 @@ import spray.routing._, HttpService._
 import sylvestris.service.common._
 
 // TODO: rename to NodeRoute
-case class EntityRoute[T]()
+case class NodeRoute[T]()
   (implicit nm: NodeManifest[T], val pathSegment: PathSegment[T])  {
 
   import nm.jsonFormat

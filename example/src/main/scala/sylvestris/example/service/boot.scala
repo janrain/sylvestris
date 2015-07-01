@@ -27,7 +27,7 @@ object boot {
     implicit val actorSystem = ActorSystem("service")
 
     val service = actorSystem.actorOf(
-      Props(classOf[ServiceActor], NodeRoute.nodeRoutes, NodeRoute.nodeWithRelationshipsOps))
+      Props(classOf[ServiceActor], NodeRoutes.nodeRoutes, NodeRoutes.nodeWithRelationshipsOps))
 
     IO(Http) ! Http.Bind(service, interface = "0.0.0.0", port = 8080)
 

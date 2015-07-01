@@ -10,11 +10,11 @@ case class NodeWithRelationshipsOps(
   val NodePathExtractor = "/api/(.*?)/(.*)".r
 
   def splitNodePath(nodePath: String): (Tag, Id) = {
-    def invalidEntityPath() = sys.error(s"invalid node path $nodePath")
+    def invalidNodePath() = sys.error(s"invalid node path $nodePath")
     nodePath match {
       case NodePathExtractor(pathSegment, id) =>
-        (pathSegmentToTag.getOrElse(PathSegment(pathSegment), invalidEntityPath()), Id(id))
-      case _ => invalidEntityPath()
+        (pathSegmentToTag.getOrElse(PathSegment(pathSegment), invalidNodePath()), Id(id))
+      case _ => invalidNodePath()
     }
   }
 
