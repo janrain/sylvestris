@@ -4,6 +4,7 @@
 - separate out into proper sbt sub-projects
 - external API client -- We have GET, need PUT and POST
 - constrain allowed relationships on entity CRUD routes -- POST is done, need PUT
+- Add relationship labels to web API
 - how do we migrate current data to this model?
 - consider Triggered Views within this world
 - identifiers should be unique; add constraints for enforcement
