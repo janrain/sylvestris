@@ -1,6 +1,6 @@
 package sylvestris.service.common
 
-import scalaz.syntax.equal._
+import scalaz.{ Id => _, Node => _, _ }, Scalaz.{ Id => _,  _ }
 import sylvestris._, core._, GraphM._
 
 case class NodeWithRelationshipsOps(
@@ -9,12 +9,15 @@ case class NodeWithRelationshipsOps(
 
   val NodePathExtractor = "/api/(.*?)/(.*)".r
 
-  def splitNodePath(nodePath: String): (Tag, Id) = {
-    def invalidNodePath() = sys.error(s"invalid node path $nodePath")
+  def splitNodePath(nodePath: String): Error \/ (Tag, Id) = {
+    val invalidNodePath = Error(s"invalid node path $nodePath")
     nodePath match {
       case NodePathExtractor(pathSegment, id) =>
-        (pathSegmentToTag.getOrElse(PathSegment(pathSegment), invalidNodePath()), Id(id))
-      case _ => invalidNodePath()
+        pathSegmentToTag
+          .get(PathSegment(pathSegment))
+          .map(tag => (tag, Id(id)))
+          .toRightDisjunction(invalidNodePath)
+      case _ => invalidNodePath.left
     }
   }
 
@@ -25,45 +28,92 @@ case class NodeWithRelationshipsOps(
     }
     yield n.map(v => NodeWithRelationships[T](v, e.map(e => Relationship(s"/api/${e.tagB.v}/${e.idB.v}"))))
 
-
-    // TODO expand this for other OneToMany/ManyToOne
-    // def link(gedges: Set[GEdge])
-    //   (idA: String, tagA: String, idB: String, tagB: String)
-    //   (relationships: List[Relationship[_, _]])
-    //   : GraphM[Graph] = GraphM { g =>
-    //   val relationship: Relationship[_, _] = relationships.find(_.uTag.v === tagB) match {
-    //     case Some(r : OneToOne[_, _])     =>
-    //       g.removeEdges(idA, tagA, tagB)
-    //       // for all x nodes b links to, remove edges from x to tagB
-    //       g.getEdges(idB, tagB, tagA).foreach(e => g.removeEdges(e.idB, tagA, tagB))
-    //       g.removeEdges(idB, tagB, tagA)
-    //       r
-    //     case Some(r : Relationship[_, _]) => r
-    //     case None => sys.error(s"no relationship between $tagA and $tagB")
-    //   }
-    //   g.addEdge(GEdge(relationship.labelTU.map(_.v), idA, tagA, idB, tagB))
-    //   g.addEdge(GEdge(relationship.labelUT.map(_.v), idB, tagB, idA, tagA))
-    // }
-
-
-  def addNodeWithRelationships[T](nodeWithRelationships: NodeWithRelationships[T])(implicit nm: NodeManifest[T]) = {
-    // TODO : move sys errors to specific return type
+  def addNodeWithRelationships[T](nodeWithRelationships: NodeWithRelationships[T])(implicit nm: NodeManifest[T])
+    : GraphM[Validation[List[Error], NodeWithRelationships[T]]]=
     for {
       n <- addNode(nodeWithRelationships.node)
-      _ <- sequence(nodeWithRelationships.relationships.map { relationship =>
-        val (tag, id) = splitNodePath(relationship.nodePath)
-        val relationships: List[core.Relationship[_, _]] = relationshipMappings
-          .getOrElse(nm.tag, sys.error("Node has no relationships"))
-        // TODO expand this for other OneToMany/Tree
-        relationships.find(_.uNodeManifest.tag === tag) match {
-          case Some(r : ToOne[_, _]) => n.toOne(Some(id))(r)
-          case Some(_ : core.Relationship[_, _]) => GraphM(())
-          case None => sys.error(s"no relationship between ${nm.tag} and $tag")
-        }
-      })
+      v <- setRelationships(n, nodeWithRelationships.relationships)
     }
-    yield nodeWithRelationships
+    yield v.map(_ => nodeWithRelationships)
+
+  def setRelationships[T : NodeManifest](node: Node[T], relationships: Set[Relationship])
+    : GraphM[Validation[List[Error], Unit]] = {
+    val x: List[Error \/ (Tag, Id)] = relationships.toList.map(r => splitNodePath(r.nodePath))
+    val y: Validation[List[Error], List[(Tag, Id)]] = x.traverseU(_.leftMap(List(_)).validation)
+    val z: Validation[List[Error], Map[Tag, List[Id]]] = y.map { m =>
+      m.groupBy { case (tag, _) => tag } mapValues(_.map { case (_, id) => id })
+    }
+
+    (z, availableNodeRelationships[T].leftMap(List(_)).validation) match {
+      case (Success(idsByTag), Success(availableRelationships)) =>
+        val a: List[GraphM[Validation[List[Error], Unit]]] = availableRelationships.map {
+          case r: ToOne[_, _] =>
+            val monkey: GraphM[Error \/ Unit] = setToOneRelationship(node, idsByTag.get(r.uNodeManifest.tag), r)
+            monkey.map(_.leftMap(List(_)).validation)
+          case _ => ???
+        }
+        val b: GraphM[Iterable[Validation[List[Error], Unit]]] = sequence(a)
+        val c: GraphM[List[Validation[List[Error], Unit]]] = b.map(_.toList)
+        val d: GraphM[Validation[List[Error], Unit]] = c.map(_.suml)
+        d
+      case (Failure(i), Failure(j)) => GraphM(Failure(i ++ j))
+      case (Failure(i), _) => GraphM(Failure(i))
+      case (_, Failure(j)) => GraphM(Failure(j))
+    }
+//    val a: GraphM[Validation[List[Error], Unit]] = availableNodeRelationships[T].map(_.map {
+//      case r: ToOne[_, _] =>
+//        val zmap: Validation[List[Error], GraphM[Error \/ Unit]] = z.map(m => setToOneRelationship(node, m.get(r.uNodeManifest.tag), r))
+//
+//        // zmap: Validation[List[Error], GraphM[Validation[List[Error], Unit]]]
+//        //
+//
+//        // GraphM[Validation[List[Error], Unit]]
+//        zmap
+//
+//      //case r: ToMany[_, _] =>
+//      //  z.map(m => node.toMany(m.get(r.uNodeManifest.tag).toList.flatten.toSet)(r).right)
+//      //case r: core.Tree[_] =>
+//      //  z.map(_.get(r.uNodeManifest.tag) match {
+//      //    // TODO We need the labels for this
+//      //    case _ => Error("bloop").left
+//      //  })
+//      //case r: core.Relationship[_, _] =>
+//      //// this seems like it'd be undefined?
+//      //// How can we make it so we don't need to cover this option?
+//      //  z.map(_.get(r.uNodeManifest.tag) match {
+//      //    case _ => Error("bloop").left
+//      //  })
+//    })
   }
+
+  def setToOneRelationship[T : NodeManifest](node: Node[T], ids: Option[List[Id]], relationship: ToOne[_, _])
+    : GraphM[Error \/ Unit] = {
+    val x: Error \/ GraphM[Unit] = ids match {
+      case Some(h :: Nil)   => node.toOne(Some(h))(relationship).right
+      case None | Some(Nil) => node.toOne(Option.empty[Id])(relationship).right
+      case _                => Error(s"Only one relationship allowed for ${relationship.uNodeManifest.tag}").left
+    }
+
+    // TODO sequence needs more scalaz
+    //sequence(x)
+    GraphM(g => x.map(_.run(g)))
+  }
+
+  def availableNodeRelationships[T : NodeManifest]: Error \/ List[core.Relationship[_, _]] =
+    relationshipMappings
+      .get(NodeManifest[T].tag)
+      .toRightDisjunction(Error("Node has no relationships"))
+
+    /*
+     *
+     * [
+     *   { nodePath: orgs/org1 },
+     *   { nodePath: orgs/org2 },
+     *   { nodePath: customers/cust1 }
+     * ] 
+     *
+     * toMany(Set(org1, org2))
+     */
 
   def updateNodeWithRelationships[T : NodeManifest](nodeWithRelationships: NodeWithRelationships[T]) =
     for {

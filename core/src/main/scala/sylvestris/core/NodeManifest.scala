@@ -9,5 +9,4 @@ object NodeManifest {
 trait NodeManifest[T] {
   implicit def tag: Tag
   implicit def jsonFormat: JsonFormat[T]
-  implicit def validation: Validation[T]
 }
