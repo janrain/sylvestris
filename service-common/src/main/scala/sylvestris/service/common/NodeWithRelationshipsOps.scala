@@ -21,23 +21,26 @@ case class NodeWithRelationshipsOps(
     }
   }
 
-  def nodeWithRelationships[T : NodeManifest](id: Id) =
+  def nodeWithRelationships[T : NodeManifest](id: Id) = {
     for {
-      n <- getNode(id)
-      e <- getEdges(id, NodeManifest[T].tag)
+      n <- EitherT(getNode(id))
+      e <- EitherT(getEdges(id, NodeManifest[T].tag))
     }
-    yield n.map(v => NodeWithRelationships[T](v, e.map(e => Relationship(s"/api/${e.tagB.v}/${e.idB.v}"))))
+    yield NodeWithRelationships[T](n, e.map(e => Relationship(s"/api/${e.tagB.v}/${e.idB.v}")))
+  }.run
 
+  // TODO make this Validation a disjunction
   def addNodeWithRelationships[T](nodeWithRelationships: NodeWithRelationships[T])(implicit nm: NodeManifest[T])
-    : GraphM[Validation[List[Error], NodeWithRelationships[T]]]=
-    for {
-      n <- addNode(nodeWithRelationships.node)
-      v <- setRelationships(n, nodeWithRelationships.relationships)
-    }
-    yield v.map(_ => nodeWithRelationships)
+    : GraphM[List[Error] \/ NodeWithRelationships[T]] = {
+      for {
+        n <- EitherT(addNode(nodeWithRelationships.node).map(_.leftMap(List(_))))
+        v <- EitherT(setRelationships(n, nodeWithRelationships.relationships))
+      }
+      yield nodeWithRelationships
+    }.run
 
   def setRelationships[T : NodeManifest](node: Node[T], relationships: Set[Relationship])
-    : GraphM[Validation[List[Error], Unit]] = {
+    : GraphM[List[Error] \/ Unit] = {
     val x: List[Error \/ (Tag, Id)] = relationships.toList.map(r => splitNodePath(r.nodePath))
     val y: Validation[List[Error], List[(Tag, Id)]] = x.traverseU(_.leftMap(List(_)).validation)
     val z: Validation[List[Error], Map[Tag, List[Id]]] = y.map { m =>
@@ -46,19 +49,19 @@ case class NodeWithRelationshipsOps(
 
     (z, availableNodeRelationships[T].leftMap(List(_)).validation) match {
       case (Success(idsByTag), Success(availableRelationships)) =>
-        val a: List[GraphM[Validation[List[Error], Unit]]] = availableRelationships.map {
+        val a: List[GraphM[List[Error] \/ Unit]] = availableRelationships.map {
           case r: ToOne[_, _] =>
             val monkey: GraphM[Error \/ Unit] = setToOneRelationship(node, idsByTag.get(r.uNodeManifest.tag), r)
-            monkey.map(_.leftMap(List(_)).validation)
+            monkey.map(_.leftMap(List(_)))
           case _ => ???
         }
-        val b: GraphM[Iterable[Validation[List[Error], Unit]]] = sequence(a)
-        val c: GraphM[List[Validation[List[Error], Unit]]] = b.map(_.toList)
-        val d: GraphM[Validation[List[Error], Unit]] = c.map(_.suml)
+        val b: GraphM[Iterable[List[Error] \/ Unit]] = sequence(a)
+        val c: GraphM[List[List[Error] \/ Unit]] = b.map(_.toList)
+        val d: GraphM[List[Error] \/ Unit] = c.map(_.suml)
         d
-      case (Failure(i), Failure(j)) => GraphM(Failure(i ++ j))
-      case (Failure(i), _) => GraphM(Failure(i))
-      case (_, Failure(j)) => GraphM(Failure(j))
+      case (Failure(i), Failure(j)) => GraphM((i ++ j).left)
+      case (Failure(i), _) => GraphM(i.left)
+      case (_, Failure(j)) => GraphM(j.left)
     }
 //    val a: GraphM[Validation[List[Error], Unit]] = availableNodeRelationships[T].map(_.map {
 //      case r: ToOne[_, _] =>
@@ -87,17 +90,12 @@ case class NodeWithRelationshipsOps(
   }
 
   def setToOneRelationship[T : NodeManifest](node: Node[T], ids: Option[List[Id]], relationship: ToOne[_, _])
-    : GraphM[Error \/ Unit] = {
-    val x: Error \/ GraphM[Unit] = ids match {
-      case Some(h :: Nil)   => node.toOne(Some(h))(relationship).right
-      case None | Some(Nil) => node.toOne(Option.empty[Id])(relationship).right
-      case _                => Error(s"Only one relationship allowed for ${relationship.uNodeManifest.tag}").left
+    : GraphM[Error \/ Unit] =
+    ids match {
+      case Some(h :: Nil)   => node.toOne(Some(h))(relationship)
+      case None | Some(Nil) => node.toOne(Option.empty[Id])(relationship)
+      case _                => GraphM(Error(s"Only one relationship allowed for ${relationship.uNodeManifest.tag}").left)
     }
-
-    // TODO sequence needs more scalaz
-    //sequence(x)
-    GraphM(g => x.map(_.run(g)))
-  }
 
   def availableNodeRelationships[T : NodeManifest]: Error \/ List[core.Relationship[_, _]] =
     relationshipMappings

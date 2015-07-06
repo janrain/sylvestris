@@ -7,12 +7,9 @@ import spray.routing._, HttpService._
 import sylvestris.service.common._
 import scalaz.{ Id => _, _ }, Scalaz.{ Id => _, get => _, put => _,  _ }
 
-object validationWriter {
-  implicit def jsonWriter[T : JsonFormat] = new RootJsonWriter[Validation[List[Error], T]] {
-    def write(v: Validation[List[Error], T]) = v match {
-      case Success(x) => x.toJson
-      case Failure(errors) => JsArray(errors.toVector.map(_.toJson))
-    }
+object disjunctionWriter {
+  implicit def jsonFormatter[T : JsonFormat, U : JsonFormat] = new RootJsonWriter[T \/ U] {
+    def write(v: T \/ U) = v.fold(_.toJson, _.toJson)
   }
 }
 
@@ -20,13 +17,13 @@ case class NodeRoute[T]()
   (implicit nm: NodeManifest[T], val pathSegment: PathSegment[T])  {
 
   import nm.jsonFormat
-  import validationWriter._
+  import disjunctionWriter._
 
   val tag = nm.tag
 
   val tableOfContents =
     complete {
-      nodes().run(InMemoryGraph).map(_.id.v)
+      nodes().run(InMemoryGraph).map(_.map(_.id.v))
     }
 
   def create(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =

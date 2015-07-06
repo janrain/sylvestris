@@ -6,8 +6,9 @@ case class Error(message: String, throwable: Option[Throwable] = None)
 
 object Error {
 
-  implicit object jsonWriter extends RootJsonWriter[Error] {
+  implicit object jsonFormatter extends RootJsonFormat[Error] {
     def write(e: Error) = JsObject("message" -> JsString(e.message))
+    def read(v: JsValue) = ???
   }
 
 }

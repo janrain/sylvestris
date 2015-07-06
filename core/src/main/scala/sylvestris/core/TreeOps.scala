@@ -1,5 +1,7 @@
 package sylvestris.core
 
+import scalaz.\/
+
 case class TreeOps[T : NodeManifest](node: Node[T]) {
   val parentLabel = Label("parent")
   val childLabel = Label("child")
@@ -12,15 +14,15 @@ case class TreeOps[T : NodeManifest](node: Node[T]) {
     override val label = Some(Labels(childLabel, parentLabel))
   }
 
-  def parent: GraphM[Option[Node[T]]] = node.toOne[T]
+  def parent: GraphM[Error \/ Option[Node[T]]] = node.toOne[T]
 
-  def children: GraphM[Set[Node[T]]] = node.toMany[T]
+  def children: GraphM[Error \/ Set[Node[T]]] = node.toMany[T]
 
-  def parent(p: Option[Node[T]]): GraphM[Unit] = parent(p.map(_.id))
+  def parent(p: Option[Node[T]]): GraphM[Error \/ Unit] = parent(p.map(_.id))
 
   def parent(id: => Option[Id]) = node.toOne(id)
 
-  def children(kids: Set[Node[T]]): GraphM[Unit] = children(kids.map(_.id))
+  def children(kids: Set[Node[T]]): GraphM[Error \/ Unit] = children(kids.map(_.id))
 
   def children(ids: => Set[Id]) = node.toMany(ids)
 }

@@ -2,14 +2,7 @@ package sylvestris.example.model
 
 import sylvestris.core._, GraphM._
 import spray.json._, DefaultJsonProtocol._
-
-trait View[T, U] {
-  def get(id: Id): GraphM[U]
-}
-
-trait Update[T, U] {
-  def update(id: Id, data: U): GraphM[U]
-}
+import scalaz.{ Id => _, _ }, Scalaz.{ Id => _, _ }
 
 case class CustomData(orgName: String, customerName: String)
 
@@ -18,23 +11,24 @@ object CustomData {
 }
 
 object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
-  def get(id: Id): GraphM[CustomData] =
+  def get(id: Id): GraphM[Error \/ CustomData] = {
     for {
-      org <- getNode[Organization](id)
-      // TODO get is bad!
-      customer <- org.get.toOne[Customer]
+      org <- EitherT(getNode[Organization](id))
+      customerOpt <- EitherT(org.toOne[Customer])
+      customer <- EitherT(GraphM(customerOpt.toRightDisjunction(Error("Customer not defined"))))
     }
-    yield CustomData(org.get.content.name, customer.get.content.name)
+    yield CustomData(org.content.name, customer.content.name)
+  }.run
 
 
-  def update(id: Id, data: CustomData): GraphM[CustomData] =
+  def update(id: Id, data: CustomData): GraphM[Error \/ CustomData] = {
     for {
-      orgOpt <- getNode[Organization](id)
-      org = orgOpt.get
-      customerOpt <- org.toOne[Customer]
-      customer = customerOpt.get
-      _ <- updateNode(org.copy(content = org.content.copy(name = data.orgName)))
-      _ <- updateNode(customer.copy(content = customer.content.copy(name = data.customerName)))
+      org <- EitherT(getNode[Organization](id))
+      customerOpt <- EitherT(org.toOne[Customer])
+      customer <- EitherT(GraphM(customerOpt.toRightDisjunction(Error("Customer not defined"))))
+      _ <- EitherT(updateNode(org.copy(content = org.content.copy(name = data.orgName))))
+      _ <- EitherT(updateNode(customer.copy(content = customer.content.copy(name = data.customerName))))
     }
     yield data
+  }.run
 }
