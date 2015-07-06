@@ -1,6 +1,6 @@
 package sylvestris.core
 
-import scalaz.\/
+import scalaz.{ \/, Monad }
 
 trait GraphM[T] {
   def run: Graph => T
@@ -9,6 +9,11 @@ trait GraphM[T] {
 }
 
 object GraphM {
+
+  implicit object monadInstance extends Monad[GraphM] {
+    def point[A](a: => A): GraphM[A] = new GraphM[A] { def run: Graph => A = g => a }
+    def bind[A, B](fa: GraphM[A])(f: A => GraphM[B]): GraphM[B] = fa.flatMap(f)
+  }
 
   def apply[T](v: Graph => T) = new GraphM[T] { def run: Graph => T = v }
 
