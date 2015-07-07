@@ -43,6 +43,8 @@ object HandleExceptions extends Directive0 {
 class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: NodeWithRelationshipsOps)
   extends Actor with HttpService with Directives {
 
+  import disjunctionWriter._
+
   implicit lazy val actorRefFactory = context
 
   val receive = runRoute(route)

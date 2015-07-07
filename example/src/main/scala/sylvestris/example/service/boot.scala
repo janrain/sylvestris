@@ -3,22 +3,23 @@ package sylvestris.example.service
 import akka.actor.{ Actor, ActorSystem, Props }
 import spray.can.Http
 import akka.io.IO
+import scalaz.EitherT
 import sylvestris._, core._, GraphM._, example.model._
 
 object boot {
 
-  def populate =
+  def populate = {
     for {
-      o1 <- addNode(Node[Organization](Id("org1"), Organization("Org 1")))
-      o2 <- addNode(Node[Organization](Id("org2"), Organization("Org 2")))
-      o3 <- addNode(Node[Organization](Id("org3"), Organization("Org 3")))
-      c <- addNode(Node[Customer](Id("cust1"), Customer("Dave Corp.")))
-      _ <- o1.toOne[Customer](Some(c))
-      _ <- o2.tree.children(Set(o1))
-      _ <- o3.tree.parent(Option(o1))
+      o1 <- EitherT(addNode(Node[Organization](Id("org1"), Organization("Org 1"))))
+      o2 <- EitherT(addNode(Node[Organization](Id("org2"), Organization("Org 2"))))
+      o3 <- EitherT(addNode(Node[Organization](Id("org3"), Organization("Org 3"))))
+      c <- EitherT(addNode(Node[Customer](Id("cust1"), Customer("Dave Corp."))))
+      _ <- EitherT(o1.toOne[Customer](Some(c)))
+      _ <- EitherT(o2.tree.children(Set(o1)))
+      _ <- EitherT(o3.tree.parent(Option(o1)))
     }
     yield {}
-
+  }.run
 
   def main(args: Array[String]): Unit = {
 

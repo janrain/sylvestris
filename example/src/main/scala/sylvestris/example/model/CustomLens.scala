@@ -20,7 +20,7 @@ object CustomLens extends View[Organization, CustomData] with Update[Organizatio
     yield CustomData(org.content.name, customer.content.name)
   }.run
 
-
+  // TODO : ripe for some EitherT sugar
   def update(id: Id, data: CustomData): GraphM[Error \/ CustomData] = {
     for {
       org <- EitherT(getNode[Organization](id))

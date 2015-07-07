@@ -7,6 +7,7 @@ import spray.routing._, HttpService._
 import sylvestris.service.common._
 import scalaz.{ Id => _, _ }, Scalaz.{ Id => _, get => _, put => _,  _ }
 
+// TODO : find home
 object disjunctionWriter {
   implicit def jsonFormatter[T : JsonFormat, U : JsonFormat] = new RootJsonWriter[T \/ U] {
     def write(v: T \/ U) = v.fold(_.toJson, _.toJson)
