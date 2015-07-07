@@ -1,6 +1,7 @@
 package sylvestris.core
 
-import scalaz._, Scalaz._
+import scalaz.\/
+import scalaz.Scalaz._
 import spray.json._
 
 object InMemoryGraph extends Graph {

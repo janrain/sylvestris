@@ -1,11 +1,11 @@
 package sylvestris.service
 
-import sylvestris._, core._, GraphM._
+import scalaz.\/
+import scalaz.syntax.equal._
 import spray.httpx.SprayJsonSupport._
 import spray.json._, DefaultJsonProtocol._
 import spray.routing._, HttpService._
-import sylvestris.service.common._
-import scalaz.{ Id => _, _ }, Scalaz.{ Id => _, get => _, put => _,  _ }
+import sylvestris._, core._, GraphM._, service.common._
 
 // TODO : find home
 object disjunctionWriter {

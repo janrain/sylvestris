@@ -1,7 +1,7 @@
 package sylvestris.core
 
 import org.reflections.Reflections
-import scalaz._, Scalaz._
+import scalaz.Scalaz._
 
 sealed class Relationship[T : NodeManifest, U : NodeManifest] {
   val tNodeManifest = NodeManifest[T]

@@ -1,6 +1,8 @@
 package sylvestris.service.common
 
-import scalaz.{ Id => _, Node => _, _ }, Scalaz.{ Id => _,  _ }
+import scalaz.{ \/, -\/, \/-, EitherT }
+import scalaz.std.list._
+import scalaz.syntax._, either._, traverse._, std.option._
 import sylvestris._, core._, GraphM._
 
 case class NodeWithRelationshipsOps(
@@ -29,7 +31,6 @@ case class NodeWithRelationshipsOps(
     yield NodeWithRelationships[T](n, e.map(e => Relationship(s"/api/${e.tagB.v}/${e.idB.v}")))
   }.run
 
-  // TODO make this Validation a disjunction
   def addNodeWithRelationships[T](nodeWithRelationships: NodeWithRelationships[T])(implicit nm: NodeManifest[T])
     : GraphM[List[Error] \/ NodeWithRelationships[T]] = {
       for {
@@ -42,21 +43,21 @@ case class NodeWithRelationshipsOps(
   def setRelationships[T : NodeManifest](node: Node[T], relationships: Set[Relationship])
     : GraphM[List[Error] \/ Unit] = {
     val x: List[Error \/ (Tag, Id)] = relationships.toList.map(r => splitNodePath(r.nodePath))
-    val y: Validation[List[Error], List[(Tag, Id)]] = x.traverseU(_.leftMap(List(_)).validation)
-    val z: Validation[List[Error], Map[Tag, List[Id]]] = y.map { m =>
+    val y: List[Error] \/ List[(Tag, Id)] = x.traverseU(_.leftMap(List(_)))
+    val z: List[Error] \/ Map[Tag, List[Id]] = y.map { m =>
       m.groupBy { case (tag, _) => tag } mapValues(_.map { case (_, id) => id })
     }
 
-    (z, availableNodeRelationships[T].leftMap(List(_)).validation) match {
-      case (Success(idsByTag), Success(availableRelationships)) =>
+    (z, availableNodeRelationships[T].leftMap(List(_))) match {
+      case (\/-(idsByTag), \/-(availableRelationships)) =>
         val a: List[GraphM[List[Error] \/ Unit]] = availableRelationships.map {
           case r: ToOne[_, _] => setToOneRelationship(node, idsByTag.get(r.uNodeManifest.tag), r).leftMap(List(_)).run
           case _ => ???
         }
         sequence(a.map(EitherT(_))).map(_ => ()).run
-      case (Failure(i), Failure(j)) => GraphM((i ++ j).left)
-      case (Failure(i), _) => GraphM(i.left)
-      case (_, Failure(j)) => GraphM(j.left)
+      case (-\/(i), -\/(j)) => GraphM((i ++ j).left)
+      case (-\/(i), _) => GraphM(i.left)
+      case (_, -\/(j)) => GraphM(j.left)
     }
 //    val a: GraphM[Validation[List[Error], Unit]] = availableNodeRelationships[T].map(_.map {
 //      case r: ToOne[_, _] =>

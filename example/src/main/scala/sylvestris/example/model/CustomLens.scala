@@ -1,8 +1,9 @@
 package sylvestris.example.model
 
-import sylvestris.core._, GraphM._
+import scalaz.{ \/, EitherT }
+import scalaz.syntax.std.option._
 import spray.json._, DefaultJsonProtocol._
-import scalaz.{ Id => _, _ }, Scalaz.{ Id => _, _ }
+import sylvestris.core._, GraphM._
 
 case class CustomData(orgName: String, customerName: String)
 

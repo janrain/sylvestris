@@ -1,6 +1,7 @@
 package sylvestris.core
 
-import scalaz._, Scalaz._
+import scalaz.{ EitherT, Monad }
+import scalaz.Scalaz._
 
 trait GraphM[T] {
   def run: Graph => T

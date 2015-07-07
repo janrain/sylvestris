@@ -1,7 +1,8 @@
 package sylvestris.core
 
 import GraphM._
-import scalaz.{ Id => _, _ }, Scalaz._
+import scalaz.EitherT
+import scalaz.Scalaz._
 
 abstract class NodeOps[T : NodeManifest] {
   def node: Node[T]
