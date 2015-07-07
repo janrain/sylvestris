@@ -33,8 +33,12 @@ lazy val commonSettings = Seq(
 
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.6.0"),
 
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "10"),
+
   libraryDependencies ++= Seq(
-    "io.spray" %%  "spray-json" % "1.3.2"))
+    "io.spray" %%  "spray-json" % "1.3.2",
+    "org.scalacheck" %% "scalacheck" % "1.12.4" % "test",
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.12" % "0.3.0" % "test"))
 
 lazy val root = (project in file("."))
   .settings(commonSettings)
@@ -54,6 +58,7 @@ lazy val core = project
   .settings(libraryDependencies ++= Seq(
     "org.reflections" % "reflections" % "0.9.10",
     "org.scalaz" %% "scalaz-core" % "7.1.2",
+    "org.typelevel" %% "shapeless-scalaz" % "0.4",
     "org.slf4j" % "slf4j-api" % "1.7.12"))
 
 lazy val example = project

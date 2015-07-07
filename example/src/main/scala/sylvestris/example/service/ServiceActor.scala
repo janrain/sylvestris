@@ -20,7 +20,7 @@ object NodeRoutes {
     List(
       NodeRoute[Customer] _,
       NodeRoute[Organization] _)
-      .map(_(InMemoryGraph))
+      .map(_(InMemoryGraph()))
 
   val pathSegmentToTag: Map[PathSegment[_], Tag] = nodeRoutes
       .map(i => i.pathSegment -> i.tag)

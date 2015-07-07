@@ -23,7 +23,7 @@ object boot {
 
   def main(args: Array[String]): Unit = {
 
-    populate.run(InMemoryGraph)
+    populate.run(InMemoryGraph())
 
     implicit val actorSystem = ActorSystem("service")
 

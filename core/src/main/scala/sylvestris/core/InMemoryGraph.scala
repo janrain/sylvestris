@@ -4,7 +4,11 @@ import scalaz.{ \/, EitherT }
 import scalaz.Scalaz._
 import spray.json._
 
-object InMemoryGraph extends Graph {
+object InMemoryGraph {
+  def apply() = new InMemoryGraph {}
+}
+
+trait InMemoryGraph extends Graph {
   case class GNode(id: Id, tag: Tag, content: String)
 
   object GNode {
@@ -38,13 +42,11 @@ object InMemoryGraph extends Graph {
   }
 
   def addNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
-    println(s"adding $node")
     gnodes += node.id -> GNode(node)
     node.right
   }
 
   def updateNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
-    println(s"updating $node")
     gnodes
       .get(node.id)
       .map { n => gnodes += node.id -> GNode(node); node }
@@ -52,7 +54,6 @@ object InMemoryGraph extends Graph {
   }
 
   def removeNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
-    println(s"remove $id")
     val tag = NodeManifest[T].tag
     val node = gnodes.get(id)
     gnodes -= id
@@ -73,19 +74,16 @@ object InMemoryGraph extends Graph {
 
 
   def addEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
-    println(s"adding $edges")
     gedges ++= edges
     edges.right
   }
 
   def removeEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
-    println(s"remove $edges")
     gedges = gedges -- edges
     edges.right
   }
 
   def removeEdges(idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
-    println(s"removing edges for $idA, $tagA, $tagB")
     val removedGedges = gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB)
     gedges --= removedGedges
     removedGedges.right
