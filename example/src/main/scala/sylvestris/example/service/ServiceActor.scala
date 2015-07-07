@@ -42,7 +42,7 @@ object HandleExceptions extends Directive0 {
   }
 }
 
-class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: NodeWithRelationshipsOps)
+class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: NodeWithRelationshipsOps, graph: Graph)
   extends Actor with HttpService with Directives {
 
   import disjunctionWriter._
@@ -58,10 +58,10 @@ class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: Nod
       pathPrefix("org_cust_lens")(
         path(idMatcher)(id =>
           get(
-            complete(CustomLens.get(id).run(InMemoryGraph))) ~
+            complete(CustomLens.get(id).run.run(graph))) ~
           put(
             entity(as[CustomData]) { data =>
-              complete(CustomLens.update(id, data).run(InMemoryGraph))
+              complete(CustomLens.update(id, data).run.run(graph))
             })))
     }
   }

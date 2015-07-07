@@ -1,7 +1,7 @@
 package sylvestris.core
 
-import scalaz.\/
+import scalaz.EitherT
 
 trait View[T, U] {
-  def get(id: Id): GraphM[Error \/ U]
+  def get(id: Id): EitherT[GraphM, Error, U]
 }

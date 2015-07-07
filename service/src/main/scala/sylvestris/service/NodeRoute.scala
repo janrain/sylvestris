@@ -30,13 +30,13 @@ case class NodeRoute[T](graph: Graph)
   def create(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     entity(as[NodeWithRelationships[T]]) { nodeWithRelationships =>
       complete {
-        nodeWithRelationshipsOps.addNodeWithRelationships[T](nodeWithRelationships).run(graph)
+        nodeWithRelationshipsOps.addNodeWithRelationships[T](nodeWithRelationships).run.run(graph)
       }
     }
 
   def read(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     complete {
-      nodeWithRelationshipsOps.nodeWithRelationships(id).run(graph)
+      nodeWithRelationshipsOps.nodeWithRelationships(id).run.run(graph)
     }
 
   def update(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
