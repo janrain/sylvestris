@@ -3,7 +3,7 @@ package sylvestris.service.common
 import scalaz.{ \/, -\/, \/-, EitherT }
 import scalaz.std.list._
 import scalaz.syntax._, either._, traverse._, std.option._
-import sylvestris._, core._, GraphM._
+import sylvestris._, core._, Graph._
 
 case class NodeWithRelationshipsOps(
   relationshipMappings: Map[Tag, List[core.Relationship[_, _]]],
@@ -54,7 +54,7 @@ case class NodeWithRelationshipsOps(
           case r: ToOne[_, _] => setToOneRelationship(node, idsByTag.get(r.uNodeManifest.tag), r).leftMap(List(_)).run
           case _ => ???
         }
-        sequence(a.map(EitherT(_))).map(_ => ())
+        a.map(EitherT(_)).sequenceU.map(_ => ())
       case (-\/(i), -\/(j)) => EitherT(GraphM((i ++ j).left))
       case (-\/(i), _) => EitherT(GraphM(i.left))
       case (_, -\/(j)) => EitherT(GraphM(j.left))

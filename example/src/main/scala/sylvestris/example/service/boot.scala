@@ -4,7 +4,7 @@ import akka.actor.{ Actor, ActorSystem, Props }
 import spray.can.Http
 import akka.io.IO
 import scalaz.EitherT
-import sylvestris._, core._, GraphM._, example.model._
+import sylvestris._, core._, Graph._, example.model._
 
 object boot {
 

@@ -36,8 +36,11 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "io.spray" %%  "spray-json" % "1.3.2"))
 
-lazy val root = (project in file(".")).
-  aggregate(client, core, example, service, `service-common`)
+lazy val root = (project in file("."))
+  .settings(commonSettings)
+  .settings(initialCommands := "import sylvestris._, core._, Graph._, Relationship._")
+  .aggregate(client, core, example, service, `service-common`)
+  .dependsOn(client, core, example, service, `service-common`)
 
 lazy val client = project
   .dependsOn(core, `service-common`)
@@ -57,7 +60,6 @@ lazy val example = project
   .dependsOn(core, service)
   .settings(commonSettings)
   .settings(Revolver.settings)
-  .settings(initialCommands := "import core._, GraphM._, Relationship._, model._, shapeless._")
 
 lazy val service = project
   .dependsOn(core, `service-common`)

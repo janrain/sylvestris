@@ -3,7 +3,7 @@ package sylvestris.example.model
 import scalaz.{ \/, EitherT }
 import scalaz.syntax.std.option._
 import spray.json._, DefaultJsonProtocol._
-import sylvestris.core._, GraphM._
+import sylvestris.core._, Graph._
 
 case class CustomData(orgName: String, customerName: String)
 

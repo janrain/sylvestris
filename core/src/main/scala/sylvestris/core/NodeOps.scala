@@ -1,6 +1,6 @@
 package sylvestris.core
 
-import GraphM._
+import Graph._
 import scalaz.EitherT
 import scalaz.Scalaz._
 
@@ -20,7 +20,7 @@ abstract class NodeOps[T : NodeManifest] {
     for {
       edges <- getEdges(rel.label.map(_.`t->u`), node.id, rel.tNodeManifest.tag, rel.uNodeManifest.tag)
       // TODO returning only an error here, but there might be multiple errors (one for each getNode)
-      nodes <- sequence(edges.map(edge => getNode[U](edge.idB)))
+      nodes <- edges.map(edge => getNode[U](edge.idB)).toList.sequenceU
     } yield nodes.toSet
   }
 
@@ -32,11 +32,11 @@ abstract class NodeOps[T : NodeManifest] {
     val tagU = relationship.uNodeManifest.tag
     for {
       _ <- removeEdges(node.id, tagT, tagU)
-      // TODO there could be multiple errors here, but we're only keeping the first
-      _ <- sequence(idU.map(id => removeToOneEdges(tagT, id, tagU))).map(_.toList.sequenceU)
+      // TODO : there could be multiple errors here, but we're only keeping the first
+      _ <- idU.map(id => removeToOneEdges(tagT, id, tagU)).sequenceU
       _ <- addEdges(idU.map(id => Set(
-          Edge(relationship.label.map(_.`t->u`), node.id, tagT, id, tagU),
-          Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT))).toSet.flatten)
+        Edge(relationship.label.map(_.`t->u`), node.id, tagT, id, tagU),
+        Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT))).toSet.flatten)
     } yield {}
   }
 
@@ -48,7 +48,7 @@ abstract class NodeOps[T : NodeManifest] {
     val tagU = relationship.uNodeManifest.tag
     for {
       // TODO there could be multiple errors here, but we're only keeping the first
-      _ <- sequence(ids.map(id => removeToOneEdges(tagT, id, tagU))).map(_.toList.sequenceU)
+      _ <- ids.map(id => removeToOneEdges(tagT, id, tagU)).toList.sequenceU
       _ <- addEdges(ids.map(id => Set(
           Edge(relationship.label.map(_.`t->u`), node.id, tagT, id, tagU),
           Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT)).toSet).flatten)

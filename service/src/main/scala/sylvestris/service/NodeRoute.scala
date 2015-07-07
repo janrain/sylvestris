@@ -5,7 +5,7 @@ import scalaz.syntax.equal._
 import spray.httpx.SprayJsonSupport._
 import spray.json._, DefaultJsonProtocol._
 import spray.routing._, HttpService._
-import sylvestris._, core._, GraphM._, service.common._
+import sylvestris._, core._, Graph._, service.common._
 
 // TODO : find home
 object disjunctionWriter {
