@@ -1,6 +1,6 @@
 package sylvestris.core
 
-import scalaz.{ \/, Monad }
+import scalaz._, Scalaz._
 
 trait GraphM[T] {
   def run: Graph => T
@@ -19,28 +19,29 @@ object GraphM {
 
   def apply[T](v: T) = new GraphM[T] { def run: Graph => T = _ => v }
 
-  def sequence[T](l: Iterable[GraphM[T]]): GraphM[Iterable[T]] = GraphM(g => l.map(_.run(g)))
+  def sequence[T, U](l: Iterable[EitherT[GraphM, T, U]]): EitherT[GraphM, T, Iterable[U]] =
+    EitherT(GraphM(g => l.map(_.run.run(g)).toList.sequenceU))
 
-  def nodes[T : NodeManifest](): GraphM[List[Error] \/ Set[Node[T]]] = GraphM(_.nodes[T]())
+  def nodes[T : NodeManifest](): EitherT[GraphM, List[Error], Set[Node[T]]] = EitherT(GraphM(_.nodes[T]()))
 
-  def getNode[T : NodeManifest](id: Id): GraphM[Error \/ Node[T]] = GraphM(_.getNode(id))
+  def getNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = EitherT(GraphM(_.getNode(id)))
 
-  def addNode[T : NodeManifest](node: Node[T]): GraphM[Error \/ Node[T]] = GraphM(_.addNode(node))
+  def addNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherT(GraphM(_.addNode(node)))
 
-  def updateNode[T : NodeManifest](node: Node[T]): GraphM[Error \/ Node[T]] = GraphM(_.updateNode(node))
+  def updateNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherT(GraphM(_.updateNode(node)))
 
-  def removeNode[T : NodeManifest](node: Id): GraphM[Error \/ Node[T]] = GraphM(_.removeNode(node))
+  def removeNode[T : NodeManifest](node: Id): EitherT[GraphM, Error, Node[T]] = EitherT(GraphM(_.removeNode(node)))
 
-  def getEdges(id: Id, tag: Tag): GraphM[Error \/ Set[Edge]] = GraphM(_.getEdges(id, tag))
+  def getEdges(id: Id, tag: Tag): EitherT[GraphM, Error, Set[Edge]] = EitherT(GraphM(_.getEdges(id, tag)))
 
-  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): GraphM[Error \/ Set[Edge]] =
-    GraphM(_.getEdges(label, idA, tagA, tagB))
+  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] =
+    EitherT(GraphM(_.getEdges(label, idA, tagA, tagB)))
 
-  def addEdges(edges: Set[Edge]): GraphM[Error \/ Set[Edge]] = GraphM(_.addEdges(edges))
+  def addEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = EitherT(GraphM(_.addEdges(edges)))
 
-  def removeEdges(edges: Set[Edge]): GraphM[Error \/ Set[Edge]] = GraphM(_.removeEdges(edges))
+  def removeEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = EitherT(GraphM(_.removeEdges(edges)))
 
-  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): GraphM[Error \/ Set[Edge]] =
-    GraphM(_.removeEdges(idA, tagA, tagB))
+  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] =
+    EitherT(GraphM(_.removeEdges(idA, tagA, tagB)))
 
 }

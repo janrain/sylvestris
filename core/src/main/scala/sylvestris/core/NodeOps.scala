@@ -6,63 +6,64 @@ import scalaz.{ Id => _, _ }, Scalaz._
 abstract class NodeOps[T : NodeManifest] {
   def node: Node[T]
 
-  def toOne[U : NodeManifest : ToOne[T, ?]]: GraphM[Error \/ Option[Node[U]]] =
-    EitherT(to[U]).fold(
-      _.left,
-      nodes =>
-        if (nodes.size > 1) Error(s"More than one node returned for $node, $nodes").left
-        else nodes.headOption.right
-    )
+  def toOne[U : NodeManifest : ToOne[T, ?]]: EitherT[GraphM, Error, Option[Node[U]]] =
+    to[U].flatMapF { nodes => GraphM {
+      if (nodes.size > 1) Error(s"More than one node returned for $node, $nodes").left
+      else nodes.headOption.right
+    }}
 
-  def toMany[U : NodeManifest : ToMany[T, ?]]: GraphM[Error \/ Set[Node[U]]] = to[U]
+  def toMany[U : NodeManifest : ToMany[T, ?]]: EitherT[GraphM, Error, Set[Node[U]]] = to[U]
 
-  private def to[U : NodeManifest : Relationship[T, ?]]: GraphM[Error \/ Set[Node[U]]] = {
+  private def to[U : NodeManifest : Relationship[T, ?]]: EitherT[GraphM, Error, Set[Node[U]]] = {
     val rel = Relationship[T, U]
     for {
-      edges <- EitherT(getEdges(rel.label.map(_.`t->u`), node.id, rel.tNodeManifest.tag, rel.uNodeManifest.tag))
+      edges <- getEdges(rel.label.map(_.`t->u`), node.id, rel.tNodeManifest.tag, rel.uNodeManifest.tag)
       // TODO returning only an error here, but there might be multiple errors (one for each getNode)
-      nodes <- EitherT(sequence(edges.map { edge => getNode[U](edge.idB) }).map(_.toList.sequenceU))
+      nodes <- sequence(edges.map(edge => getNode[U](edge.idB)))
     } yield nodes.toSet
-  }.run
+  }
 
-  def toOne[U : NodeManifest : ToOne[T, ?]](uNode: Option[Node[U]]): GraphM[Error \/ Unit] = toOne(uNode.map(_.id))
+  def toOne[U : NodeManifest : ToOne[T, ?]](uNode: Option[Node[U]]): EitherT[GraphM, Error, Unit] =
+    toOne(uNode.map(_.id))
 
-  def toOne(idU: Option[Id])(implicit relationship: ToOne[_, _]): GraphM[Error \/ Unit] = {
+  def toOne(idU: Option[Id])(implicit relationship: ToOne[_, _]): EitherT[GraphM, Error, Unit] = {
     val tagT = relationship.tNodeManifest.tag
     val tagU = relationship.uNodeManifest.tag
     for {
-      _ <- EitherT(removeEdges(node.id, tagT, tagU))
+      _ <- removeEdges(node.id, tagT, tagU)
       // TODO there could be multiple errors here, but we're only keeping the first
-      _ <- EitherT(sequence(idU.map(id => removeToOneEdges(tagT, id, tagU))).map(_.toList.sequenceU))
-      _ <- EitherT(addEdges(idU.map(id => Set(
+      _ <- sequence(idU.map(id => removeToOneEdges(tagT, id, tagU))).map(_.toList.sequenceU)
+      _ <- addEdges(idU.map(id => Set(
           Edge(relationship.label.map(_.`t->u`), node.id, tagT, id, tagU),
-          Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT))).toSet.flatten))
+          Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT))).toSet.flatten)
     } yield {}
-  }.run
+  }
 
-  def toMany[U : NodeManifest : ToMany[T, ?]](nodes: Set[Node[U]]): GraphM[Error \/ Unit] = toMany(nodes.map(_.id))
+  def toMany[U : NodeManifest : ToMany[T, ?]](nodes: Set[Node[U]]): EitherT[GraphM, Error, Unit] =
+    toMany(nodes.map(_.id))
 
-  def toMany(ids: Set[Id])(implicit relationship: ToMany[_, _]): GraphM[Error \/ Unit] = {
+  def toMany(ids: Set[Id])(implicit relationship: ToMany[_, _]): EitherT[GraphM, Error, Unit] = {
     val tagT = relationship.tNodeManifest.tag
     val tagU = relationship.uNodeManifest.tag
     for {
       // TODO there could be multiple errors here, but we're only keeping the first
-      _ <- EitherT(sequence(ids.map(id => removeToOneEdges(tagT, id, tagU))).map(_.toList.sequenceU))
-      _ <- EitherT(addEdges(ids.map(id => Set(
+      _ <- sequence(ids.map(id => removeToOneEdges(tagT, id, tagU))).map(_.toList.sequenceU)
+      _ <- addEdges(ids.map(id => Set(
           Edge(relationship.label.map(_.`t->u`), node.id, tagT, id, tagU),
-          Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT)).toSet).flatten))
+          Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT)).toSet).flatten)
     } yield {}
-  }.run
+  }
 
-  private def removeToOneEdges(tagT: Tag, idU: Id, tagU: Tag)(implicit relationship: Relationship[_, _]): GraphM[Error \/ Unit] = {
+  private def removeToOneEdges(tagT: Tag, idU: Id, tagU: Tag)(implicit relationship: Relationship[_, _])
+    : EitherT[GraphM, Error, Unit] = {
     relationship match {
       case r : ToOne[_, _] =>
-        (for {
-          edges <- EitherT(getEdges(relationship.label.map(_.`u->t`), idU, tagU, tagT))
-          _ <- EitherT(removeEdges(edges.map(e => Edge(e.label, e.idB, e.tagB, e.idA, e.tagA))))
-          _ <- EitherT(removeEdges(idU, tagU, tagT))
-        } yield {}).run
-      case _ => GraphM(().right[Error])
+        for {
+          edges <- getEdges(relationship.label.map(_.`u->t`), idU, tagU, tagT)
+          _ <- removeEdges(edges.map(e => Edge(e.label, e.idB, e.tagB, e.idA, e.tagA)))
+          _ <- removeEdges(idU, tagU, tagT)
+        } yield {}
+      case _ => EitherT(GraphM(().right[Error]))
     }
   }
 

@@ -23,8 +23,8 @@ case class NodeWithRelationshipsOps(
 
   def nodeWithRelationships[T : NodeManifest](id: Id) = {
     for {
-      n <- EitherT(getNode(id))
-      e <- EitherT(getEdges(id, NodeManifest[T].tag))
+      n <- getNode(id)
+      e <- getEdges(id, NodeManifest[T].tag)
     }
     yield NodeWithRelationships[T](n, e.map(e => Relationship(s"/api/${e.tagB.v}/${e.idB.v}")))
   }.run
@@ -33,7 +33,7 @@ case class NodeWithRelationshipsOps(
   def addNodeWithRelationships[T](nodeWithRelationships: NodeWithRelationships[T])(implicit nm: NodeManifest[T])
     : GraphM[List[Error] \/ NodeWithRelationships[T]] = {
       for {
-        n <- EitherT(addNode(nodeWithRelationships.node).map(_.leftMap(List(_))))
+        n <- addNode(nodeWithRelationships.node).leftMap(List(_))
         v <- EitherT(setRelationships(n, nodeWithRelationships.relationships))
       }
       yield nodeWithRelationships
@@ -50,15 +50,10 @@ case class NodeWithRelationshipsOps(
     (z, availableNodeRelationships[T].leftMap(List(_)).validation) match {
       case (Success(idsByTag), Success(availableRelationships)) =>
         val a: List[GraphM[List[Error] \/ Unit]] = availableRelationships.map {
-          case r: ToOne[_, _] =>
-            val monkey: GraphM[Error \/ Unit] = setToOneRelationship(node, idsByTag.get(r.uNodeManifest.tag), r)
-            monkey.map(_.leftMap(List(_)))
+          case r: ToOne[_, _] => setToOneRelationship(node, idsByTag.get(r.uNodeManifest.tag), r).leftMap(List(_)).run
           case _ => ???
         }
-        val b: GraphM[Iterable[List[Error] \/ Unit]] = sequence(a)
-        val c: GraphM[List[List[Error] \/ Unit]] = b.map(_.toList)
-        val d: GraphM[List[Error] \/ Unit] = c.map(_.suml)
-        d
+        sequence(a.map(EitherT(_))).map(_ => ()).run
       case (Failure(i), Failure(j)) => GraphM((i ++ j).left)
       case (Failure(i), _) => GraphM(i.left)
       case (_, Failure(j)) => GraphM(j.left)
@@ -90,11 +85,12 @@ case class NodeWithRelationshipsOps(
   }
 
   def setToOneRelationship[T : NodeManifest](node: Node[T], ids: Option[List[Id]], relationship: ToOne[_, _])
-    : GraphM[Error \/ Unit] =
+    : EitherT[GraphM, Error, Unit] =
     ids match {
       case Some(h :: Nil)   => node.toOne(Some(h))(relationship)
       case None | Some(Nil) => node.toOne(Option.empty[Id])(relationship)
-      case _                => GraphM(Error(s"Only one relationship allowed for ${relationship.uNodeManifest.tag}").left)
+      case _                =>
+        EitherT(GraphM(Error(s"Only one relationship allowed for ${relationship.uNodeManifest.tag}").left))
     }
 
   def availableNodeRelationships[T : NodeManifest]: Error \/ List[core.Relationship[_, _]] =
@@ -108,12 +104,13 @@ case class NodeWithRelationshipsOps(
      *   { nodePath: orgs/org1 },
      *   { nodePath: orgs/org2 },
      *   { nodePath: customers/cust1 }
-     * ] 
+     * ]
      *
      * toMany(Set(org1, org2))
      */
 
-  def updateNodeWithRelationships[T : NodeManifest](nodeWithRelationships: NodeWithRelationships[T]) =
+  def updateNodeWithRelationships[T : NodeManifest](nodeWithRelationships: NodeWithRelationships[T])
+    : EitherT[GraphM, Error, NodeWithRelationships[T]] =
     for {
       n <- updateNode(nodeWithRelationships.node)
     }

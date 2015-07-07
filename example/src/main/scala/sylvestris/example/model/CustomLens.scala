@@ -13,8 +13,8 @@ object CustomData {
 object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
   def get(id: Id): GraphM[Error \/ CustomData] = {
     for {
-      org <- EitherT(getNode[Organization](id))
-      customerOpt <- EitherT(org.toOne[Customer])
+      org <- getNode[Organization](id)
+      customerOpt <- org.toOne[Customer]
       customer <- EitherT(GraphM(customerOpt.toRightDisjunction(Error("Customer not defined"))))
     }
     yield CustomData(org.content.name, customer.content.name)
@@ -23,11 +23,11 @@ object CustomLens extends View[Organization, CustomData] with Update[Organizatio
   // TODO : ripe for some EitherT sugar
   def update(id: Id, data: CustomData): GraphM[Error \/ CustomData] = {
     for {
-      org <- EitherT(getNode[Organization](id))
-      customerOpt <- EitherT(org.toOne[Customer])
+      org <- getNode[Organization](id)
+      customerOpt <- org.toOne[Customer]
       customer <- EitherT(GraphM(customerOpt.toRightDisjunction(Error("Customer not defined"))))
-      _ <- EitherT(updateNode(org.copy(content = org.content.copy(name = data.orgName))))
-      _ <- EitherT(updateNode(customer.copy(content = customer.content.copy(name = data.customerName))))
+      _ <- updateNode(org.copy(content = org.content.copy(name = data.orgName)))
+      _ <- updateNode(customer.copy(content = customer.content.copy(name = data.customerName)))
     }
     yield data
   }.run

@@ -14,7 +14,7 @@ object disjunctionWriter {
   }
 }
 
-case class NodeRoute[T]()
+case class NodeRoute[T](graph: Graph)
   (implicit nm: NodeManifest[T], val pathSegment: PathSegment[T])  {
 
   import nm.jsonFormat
@@ -24,19 +24,19 @@ case class NodeRoute[T]()
 
   val tableOfContents =
     complete {
-      nodes().run(InMemoryGraph).map(_.map(_.id.v))
+      nodes().run.run(graph).map(_.map(_.id.v))
     }
 
   def create(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     entity(as[NodeWithRelationships[T]]) { nodeWithRelationships =>
       complete {
-        nodeWithRelationshipsOps.addNodeWithRelationships[T](nodeWithRelationships).run(InMemoryGraph)
+        nodeWithRelationshipsOps.addNodeWithRelationships[T](nodeWithRelationships).run(graph)
       }
     }
 
   def read(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     complete {
-      nodeWithRelationshipsOps.nodeWithRelationships(id).run(InMemoryGraph)
+      nodeWithRelationshipsOps.nodeWithRelationships(id).run(graph)
     }
 
   def update(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
@@ -45,13 +45,13 @@ case class NodeRoute[T]()
         if (nodeWithRelationships.node.id =/= id) {
           sys.error("id mismatch - view and URL id must match")
         }
-        nodeWithRelationshipsOps.updateNodeWithRelationships[T](nodeWithRelationships).run(InMemoryGraph)
+        nodeWithRelationshipsOps.updateNodeWithRelationships[T](nodeWithRelationships).run.run(graph)
       }
     }
 
   def delete(id: Id) =
     complete {
-      removeNode(id).run(InMemoryGraph)
+      removeNode(id).run.run(graph)
       Map("status" -> "deleted")
     }
 
