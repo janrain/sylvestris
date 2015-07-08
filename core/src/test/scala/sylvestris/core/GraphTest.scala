@@ -2,31 +2,15 @@ package sylvestris.core
 
 import org.scalacheck._, Arbitrary._, Prop._, Shapeless._
 import scalaz._, Scalaz._
-import shapeless.contrib._, scalaz._
-import spray.json._, DefaultJsonProtocol._
+import shapeless.contrib.scalaz._
 import sylvestris.core.Graph._
+import sylvestris.core.fixtures.model._
 
 // TDOO : investigate compile slows; likely Arbitrary and/or Equal instance derivations
 
 abstract class GraphTest extends Properties("Graph") {
   // TODO : this signature will change once transact is in place
   def withGraph[T](f: Graph => T): T
-
-  object Content1 {
-    implicit object nodeManifest extends NodeManifest[Content1] {
-      implicit val tag = Tag("content")
-      implicit val jsonFormat = jsonFormat1(apply)
-    }
-  }
-  case class Content1(v: String)
-
-  object Content2 {
-    implicit object nodeManifest extends NodeManifest[Content2] {
-      implicit val tag = Tag("content2")
-      implicit val jsonFormat = jsonFormat1(apply)
-    }
-  }
-  case class Content2(v: String)
 
   property("addNode") = forAll { (node: Node[Content1]) => withGraph { g =>
     addNode(node).run.run(g)
@@ -55,7 +39,7 @@ abstract class GraphTest extends Properties("Graph") {
     val edge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
-      _ <- addNode(node1)
+      _ <- addNode(node2)
       _ <- addEdges(Set(edge))
     } yield {}).run.run(g)
     getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set(edge).right[Error]
@@ -65,10 +49,11 @@ abstract class GraphTest extends Properties("Graph") {
     val edge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
-      _ <- addNode(node1)
+      _ <- addNode(node2)
       _ <- addEdges(Set(edge))
     } yield {}).run.run(g)
-    removeEdges(Set(edge)).run.run(g)
+    val removed = removeEdges(Set(edge)).run.run(g)
+    removed === Set(edge).right[Error]
     getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set.empty[Edge].right[Error]
   }}
 
@@ -76,10 +61,11 @@ abstract class GraphTest extends Properties("Graph") {
     val edge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
-      _ <- addNode(node1)
+      _ <- addNode(node2)
       _ <- addEdges(Set(edge))
     } yield {}).run.run(g)
-    removeEdges(node1.id, Content1.nodeManifest.tag, Content2.nodeManifest.tag).run.run(g)
+    val removed = removeEdges(node1.id, Content1.nodeManifest.tag, Content2.nodeManifest.tag).run.run(g)
+    removed === Set(edge).right
     getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set.empty[Edge].right[Error]
   }}
 
@@ -89,7 +75,7 @@ abstract class GraphTest extends Properties("Graph") {
     val edge2 = Edge(None, node1.id, Content1.nodeManifest.tag, node3.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
-      _ <- addNode(node1)
+      _ <- addNode(node2)
       _ <- addEdges(Set(edge1, edge2))
     } yield {}).run.run(g)
 

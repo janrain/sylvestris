@@ -31,9 +31,9 @@ abstract class NodeOps[T : NodeManifest] {
     val tagT = relationship.tNodeManifest.tag
     val tagU = relationship.uNodeManifest.tag
     for {
-      _ <- removeEdges(node.id, tagT, tagU)
+      removed <- removeEdges(node.id, tagT, tagU)
       // TODO : there could be multiple errors here, but we're only keeping the first
-      _ <- idU.map(id => removeToOneEdges(tagT, id, tagU)).sequenceU
+      _ <- removed.map(e => removeToOneEdges(tagT, e.idB, tagU)).toList.sequenceU
       _ <- addEdges(idU.map(id => Set(
         Edge(relationship.label.map(_.`t->u`), node.id, tagT, id, tagU),
         Edge(relationship.label.map(_.`u->t`), id, tagU, node.id, tagT))).toSet.flatten)
