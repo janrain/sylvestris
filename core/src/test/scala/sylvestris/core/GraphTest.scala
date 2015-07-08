@@ -2,12 +2,15 @@ package sylvestris.core
 
 import org.scalacheck._, Arbitrary._, Prop._, Shapeless._
 import scalaz._, Scalaz._
-import shapeless.contrib.scalaz._
+import shapeless.contrib._, scalaz._
 import spray.json._, DefaultJsonProtocol._
 import sylvestris.core.Graph._
 
+// TDOO : investigate compile slows; likely Arbitrary and/or Equal instance derivations
+
 abstract class GraphTest extends Properties("Graph") {
-  def newGraph: Graph
+  // TODO : this signature will change once transact is in place
+  def withGraph[T](f: Graph => T): T
 
   object Content1 {
     implicit object nodeManifest extends NodeManifest[Content1] {
@@ -25,84 +28,76 @@ abstract class GraphTest extends Properties("Graph") {
   }
   case class Content2(v: String)
 
-  property("addNode") = forAll { (node: Node[Content1]) =>
-    val graph = newGraph
-    addNode(node).run.run(graph)
-    nodes[Content1].run.run(graph) === Set(node).right[List[Error]]
-  }
+  property("addNode") = forAll { (node: Node[Content1]) => withGraph { g =>
+    addNode(node).run.run(g)
+    nodes[Content1].run.run(g) === Set(node).right[List[Error]]
+  }}
 
-  property("getNode") = forAll { (node: Node[Content1]) =>
-    val graph = newGraph
-    addNode(node).run.run(graph)
-    getNode[Content1](node.id).run.run(graph) === node.right
-  }
+  property("getNode") = forAll { (node: Node[Content1]) => withGraph { g =>
+    addNode(node).run.run(g)
+    getNode[Content1](node.id).run.run(g) === node.right
+  }}
 
-  property("updateNode") = forAll { (node: Node[Content1], newContent: Content1) =>
-    val graph = newGraph
-    addNode(node).run.run(graph)
+  property("updateNode") = forAll { (node: Node[Content1], newContent: Content1) => withGraph { g =>
+    addNode(node).run.run(g)
     val newNode = Node(id = node.id, content = newContent)
-    updateNode(newNode).run.run(graph)
-    nodes[Content1].run.run(graph) === Set(newNode).right[List[Error]]
-  }
+    updateNode(newNode).run.run(g)
+    nodes[Content1].run.run(g) === Set(newNode).right[List[Error]]
+  }}
 
-  property("removeNode") = forAll { (node: Node[Content1]) =>
-    val graph = newGraph
-    addNode(node).run.run(graph)
-    removeNode[Content1](node.id).run.run(graph)
-    nodes[Content1].run.run(graph) === Set.empty[Node[Content1]].right[List[Error]]
-  }
+  property("removeNode") = forAll { (node: Node[Content1]) => withGraph { g =>
+    addNode(node).run.run(g)
+    removeNode[Content1](node.id).run.run(g)
+    nodes[Content1].run.run(g) === Set.empty[Node[Content1]].right[List[Error]]
+  }}
 
-  property("addEdges") = forAll { (node1: Node[Content1], node2: Node[Content2]) =>
-    val graph = newGraph
+  property("addEdges") = forAll { (node1: Node[Content1], node2: Node[Content2]) => withGraph { g =>
     val edge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
       _ <- addNode(node1)
       _ <- addEdges(Set(edge))
-    } yield {}).run.run(graph)
-    getEdges(node1.id, Content1.nodeManifest.tag).run.run(graph) === Set(edge).right[Error]
-  }
+    } yield {}).run.run(g)
+    getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set(edge).right[Error]
+  }}
 
-  property("removeEdges(Set[Edge])") = forAll { (node1: Node[Content1], node2: Node[Content2]) =>
-    val graph = newGraph
+  property("removeEdges(Set[Edge])") = forAll { (node1: Node[Content1], node2: Node[Content2]) => withGraph { g =>
     val edge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
       _ <- addNode(node1)
       _ <- addEdges(Set(edge))
-    } yield {}).run.run(graph)
-    removeEdges(Set(edge)).run.run(graph)
-    getEdges(node1.id, Content1.nodeManifest.tag).run.run(graph) === Set.empty[Edge].right[Error]
-  }
+    } yield {}).run.run(g)
+    removeEdges(Set(edge)).run.run(g)
+    getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set.empty[Edge].right[Error]
+  }}
 
-  property("removeEdges") = forAll { (node1: Node[Content1], node2: Node[Content2]) =>
-    val graph = newGraph
+  property("removeEdges") = forAll { (node1: Node[Content1], node2: Node[Content2]) => withGraph { g =>
     val edge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
       _ <- addNode(node1)
       _ <- addEdges(Set(edge))
-    } yield {}).run.run(graph)
-    removeEdges(node1.id, Content1.nodeManifest.tag, Content2.nodeManifest.tag).run.run(graph)
-    getEdges(node1.id, Content1.nodeManifest.tag).run.run(graph) === Set.empty[Edge].right[Error]
-  }
+    } yield {}).run.run(g)
+    removeEdges(node1.id, Content1.nodeManifest.tag, Content2.nodeManifest.tag).run.run(g)
+    getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set.empty[Edge].right[Error]
+  }}
 
   property("getEdges filters on type") = forAll {
-    (node1: Node[Content1], node2: Node[Content1], node3: Node[Content2]) =>
-    val graph = newGraph
+    (node1: Node[Content1], node2: Node[Content1], node3: Node[Content2]) => withGraph { g =>
     val edge1 = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content1.nodeManifest.tag)
     val edge2 = Edge(None, node1.id, Content1.nodeManifest.tag, node3.id, Content2.nodeManifest.tag)
     (for {
       _ <- addNode(node1)
       _ <- addNode(node1)
       _ <- addEdges(Set(edge1, edge2))
-    } yield {}).run.run(graph)
+    } yield {}).run.run(g)
 
     val foundEdges = getEdges(None, node1.id, Content1.nodeManifest.tag, Content2.nodeManifest.tag)
-    foundEdges.run.run(graph) === Set(edge2).right[Error]
-  }
+    foundEdges.run.run(g) === Set(edge2).right[Error]
+  }}
 }
 
 object InMemoryGraphTest extends GraphTest {
-  def newGraph = InMemoryGraph()
+  def withGraph[T](f: Graph => T): T = f(InMemoryGraph())
 }

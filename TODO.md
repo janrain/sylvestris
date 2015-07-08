@@ -16,6 +16,9 @@
 - open-source it; keep the result of this work open-source ready
 - logging and audit
 - µtest? scala.js support?
+- prefix projects and associated root folders with sylvestris-
+- consider Free Monads
+- handle empty ids
 
 In the short term utilize current C3 mechanisms for:
 ===========

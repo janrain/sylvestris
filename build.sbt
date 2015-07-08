@@ -33,18 +33,14 @@ lazy val commonSettings = Seq(
 
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.6.0"),
 
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "10"),
-
-  libraryDependencies ++= Seq(
-    "io.spray" %%  "spray-json" % "1.3.2",
-    "org.scalacheck" %% "scalacheck" % "1.12.4" % "test",
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.12" % "0.3.0" % "test"))
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "10", "-verbosity", "1"))
 
 lazy val root = (project in file("."))
   .settings(commonSettings)
-  .settings(initialCommands := "import sylvestris._, core._, Graph._, Relationship._")
-  .aggregate(client, core, example, service, `service-common`)
-  .dependsOn(client, core, example, service, `service-common`)
+  .settings(
+    initialCommands := "import sylvestris._, core._, Graph._, Relationship._, example.service._, example.model._")
+  .aggregate(client, core, example, service, `service-common`, slick)
+  .dependsOn(client, core, example, service, `service-common`, slick)
 
 lazy val client = project
   .dependsOn(core, `service-common`)
@@ -56,10 +52,13 @@ lazy val client = project
 lazy val core = project
   .settings(commonSettings)
   .settings(libraryDependencies ++= Seq(
+    "io.spray" %%  "spray-json" % "1.3.2",
     "org.reflections" % "reflections" % "0.9.10",
     "org.scalaz" %% "scalaz-core" % "7.1.2",
-    "org.typelevel" %% "shapeless-scalaz" % "0.4",
-    "org.slf4j" % "slf4j-api" % "1.7.12"))
+    "org.slf4j" % "slf4j-api" % "1.7.12",
+    "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.12" % "0.3.0" % "test",
+    "org.typelevel" %% "shapeless-scalaz" % "0.4" % "test"))
 
 lazy val example = project
   .dependsOn(core, service)
@@ -78,3 +77,12 @@ lazy val service = project
 lazy val `service-common` = project
   .dependsOn(core)
   .settings(commonSettings)
+
+lazy val slick = project
+  .dependsOn(core % "test->test;compile->compile")
+  .settings(commonSettings)
+  .settings(libraryDependencies ++= Seq(
+    "com.typesafe.slick" %% "slick" % "2.1.0",
+    "com.h2database" % "h2" % "1.4.178",
+    "org.postgresql" % "postgresql" % "9.3-1101-jdbc41",
+    "org.slf4j" % "slf4j-nop" % "1.6.4"))
