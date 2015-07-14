@@ -8,10 +8,9 @@
 - scoverage
 - scalariform
 - wart remover
-- continuous integration
 - refine error handling
 - generate RAML
-- Json4s. what was the error we ran into? we might have changed enough that it's no longer an issue?
+- consider json4s
 - generalize JSON serialization. e.g. Pickle[T]
 - open-source it; keep the result of this work open-source ready
 - logging and audit
@@ -21,10 +20,6 @@
 - handle empty ids
 - select and add LICENSE.md
 - add CHANGELOG.md
-
-In the short term utilize current C3 mechanisms for:
-===========
 - data validations
 - triggered views
-
-In the log term, think about data validations as triggered views
+- consider data validations as triggered views
