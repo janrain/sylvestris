@@ -19,6 +19,8 @@
 - prefix projects and associated root folders with sylvestris-
 - consider Free Monads
 - handle empty ids
+- select and add LICENSE.md
+- add CHANGELOG.md
 
 In the short term utilize current C3 mechanisms for:
 ===========

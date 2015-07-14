@@ -1,17 +1,17 @@
 package sylvestris.slick
 
 import scalaz.{ \/, EitherT }
-import scalaz.std.list._
-import scalaz.syntax._, either._, traverse._
+import scalaz.std, std.anyVal._, std.list._
+import scalaz.syntax._, either._, equal._, traverse._
 import scala.slick.ast.ColumnOption.DBType
 import scala.slick.driver.PostgresDriver.simple.{ Tag => _, _ }
 import scala.slick.jdbc.meta.MTable
 import spray.json._
-import sylvestris.core._
-import sylvestris.slick.SlickGraph.{ Node => SlickNode, nodes => slickNodes, Edge => SlickEdge, edges => slickEdges }
+import sylvestris.core, core._
+import sylvestris.slick.SlickGraph._
 
 // TODO : update to slick 3.0
-// TODO : .transactional
+// TODO : .transact
 
 class SlickGraph(implicit session: Session) extends Graph {
 
@@ -19,17 +19,11 @@ class SlickGraph(implicit session: Session) extends Graph {
     t.ddl.create
   }
 
-  def slickNodeToNode[T : NodeManifest](v: SlickNode): Error \/ Node[T] =
-    \/.fromTryCatchNonFatal(v.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
-      .bimap(t => Error(s"unable to parse $v to Node", Some(t)), Node[T](Id(v.id), _))
-
-  def slickEdgeToEdge(v: SlickEdge): Edge = Edge(v.label.map(Label(_)), Id(v.aId), Tag(v.aTag), Id(v.bId), Tag(v.aTag))
-
   def nodes[T : NodeManifest](): EitherT[GraphM, List[Error], Set[Node[T]]] = EitherTGraphM {
     slickNodes.list.map(slickNodeToNode[T]).sequenceU.bimap(List(_), _.toSet)
   }
 
-  def getNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
+  def getNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = slick {
     slickNodes
       .filter(d => d.id === id.v && d.tag === NodeManifest[T].tag.v)
       .list
@@ -42,53 +36,73 @@ class SlickGraph(implicit session: Session) extends Graph {
       }
   }
 
-  def addNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
-    implicit val jsonFormat = NodeManifest[T].jsonFormat
-
+  def addNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = slick {
     if (slickNodes.filter(_.id === node.id.v).run.nonEmpty) {
       Error(s"$node already defined").left
     }
     else {
-      slickNodes += SlickNode(node.id.v, NodeManifest[T].tag.v, node.content.toJson.compactPrint)
+      slickNodes += nodeToSlickNode(node)
       node.right
     }
   }
 
-  def updateNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = ???
+  def updateNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = slick {
+    val updatedCount = slickNodes.filter(_.id === node.id.v).update(nodeToSlickNode(node))
+    if (updatedCount =/= 1) Error(s"updated $updatedCount for $node").left
+    else node.right
+  }
 
   def removeNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] =
-    getNode(id).flatMap { node => EitherTGraphM {
+    getNode(id).flatMap { node => slick {
       val deletedCount = slickNodes.filter(_.id === id.v).delete
-      if (deletedCount < 1) Error(s"$id not found").left
+      if (deletedCount < 1) Error(s"$id not deleted").left
       else node.right
     }}
 
-  // TODO : current DocumentGraph not storing tags
-  def getEdges(id: Id, tag: Tag): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
-    slickEdges
-      .filter(e => e.aId === id.v && e.aTag === tag.v)
+  def getEdges(id: Id, tag: Tag): EitherT[GraphM, Error, Set[Edge]] = slick {
+    filterEdgesQuery(id, tag)
       .list
       .map(slickEdgeToEdge)
       .toSet
       .right
-      // .sequenceU//.bimap(List(_), _.toSet)
   }
 
-  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] = ???
-  def addEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = ???
-  def removeEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = ???
-  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] = ???
+  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] = slick {
+    filterEdgesQuery(label, idA, tagA, tagB)
+      .list
+      .map(slickEdgeToEdge)
+      .toSet
+      .right
+  }
+
+  def addEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = slick {
+    slickEdges ++= edges.map(edgeToSlickEdge)
+    edges.right
+  }
+
+  def removeEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = slick {
+    val deletedCount = edges.map(filterEdgesQuery).reduce(_++_).delete
+    if (deletedCount =/= edges.size) Error(s"$deletedCount of ${edges.size} deleted, ${edges}").left
+    else edges.right
+  }
+
+  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] =
+    getEdges(None, idA, tagA, tagB).flatMap { edges => slick {
+      val deletedCount = filterEdgesQuery(idA, tagA, tagB).delete
+      if (deletedCount =/= edges.size) Error(s"$deletedCount of ${edges.size} deleted, ${edges}").left
+      else edges.right
+    }}
 
 }
 
 object SlickGraph {
   import scala.slick.driver.PostgresDriver.simple.Tag
 
-  case class Node(id: String, tag: String, content: String)
+  case class SlickNode(id: String, tag: String, content: String)
 
   // TODO : migration
   // - rename table documents → nodes
-  // - rename nodes : id → id
+  // - rename nodes : poid → id
   // - rename nodes : type → tag
   // - rename edges : name → label
   // - rename edges : from → a_id
@@ -96,34 +110,70 @@ object SlickGraph {
   // - rename edges : to → b_id
   // - add column b_tag to edges
 
-  class Nodes(t: Tag) extends Table[Node](t, "nodes") {
-    // TODO : id -> id?
+  class SlickNodes(t: Tag) extends Table[SlickNode](t, "nodes") {
     def id = column[String]("id", O.PrimaryKey)
     def tag = column[String]("tag")
     def content = column[String]("content", DBType("TEXT"))
-    def * = (id, tag, content) <> (Node.tupled, Node.unapply)
+    def * = (id, tag, content) <> (SlickNode.tupled, SlickNode.unapply)
     def idxType = index("idx_type", tag)
   }
-  val nodes = TableQuery[Nodes]
+  val slickNodes = TableQuery[SlickNodes]
 
-  // TODO : update variable name to be in line with Edge
+  // TODO : update variable names to be in line with Edge
 
-  case class Edge(label: Option[String], aId: String, aTag: String, bId: String, bTag: String)
+  case class SlickEdge(label: Option[String], idA: String, tagA: String, idB: String, tagB: String)
 
-  class Edges(t: Tag) extends Table[Edge](t, "edges") {
+  class SlickEdges(t: Tag) extends Table[SlickEdge](t, "edges") {
     def label = column[Option[String]]("label")
-    def aId = column[String]("a_id")
-    def aTag = column[String]("a_tag")
-    def bId = column[String]("b_id")
-    def bTag = column[String]("b_tag")
-    def * = (label, aId, aTag, bId, bTag) <> (Edge.tupled, Edge.unapply)
+    def idA = column[String]("a_id")
+    def tagA = column[String]("a_tag")
+    def idB = column[String]("b_id")
+    def tagB = column[String]("b_tag")
+    def * = (label, idA, tagA, idB, tagB) <> (SlickEdge.tupled, SlickEdge.unapply)
     // TODO : do we want delete cascade?
-    def aFk = foreignKey("a_fk", aId, nodes)(_.id, onDelete = ForeignKeyAction.Cascade)
-    def bFk = foreignKey("to_fk", bId, nodes)(_.id, onDelete = ForeignKeyAction.Cascade)
-    def idx = index("idx_all", (label, aId, aTag, bId, bTag), unique = true)
-    def idxA = index("idx_a", (aId, aTag))
-    def idxB = index("idx_b", (bId, bTag))
+    def aFk = foreignKey("a_fk", idA, slickNodes)(_.id, onDelete = ForeignKeyAction.Cascade)
+    def bFk = foreignKey("to_fk", idB, slickNodes)(_.id, onDelete = ForeignKeyAction.Cascade)
+    def idx = index("idx_all", (label, idA, tagA, idB, tagB), unique = true)
+    def idxA = index("idx_a", (idA, tagA))
+    def idxB = index("idx_b", (idB, tagB))
   }
-  val edges = TableQuery[Edges]
+  val slickEdges = TableQuery[SlickEdges]
+
+  def filterEdgesQuery(idA: Id, tagA: core.Tag)
+    : Query[SlickEdges, SlickEdges#TableElementType, Seq] =
+    filterEdgesQuery(None, idA, tagA, None, None)
+
+  def filterEdgesQuery(idA: Id, tagA: core.Tag, tagB: core.Tag): Query[SlickEdges, SlickEdges#TableElementType, Seq] =
+    filterEdgesQuery(None, idA, tagA, None, Some(tagB))
+
+  def filterEdgesQuery(label: Option[Label], idA: Id, tagA: core.Tag, tagB: core.Tag)
+    : Query[SlickEdges, SlickEdges#TableElementType, Seq] =
+    filterEdgesQuery(label, idA, tagA, None, Some(tagB))
+
+  def filterEdgesQuery(edge: Edge): Query[SlickEdges, SlickEdges#TableElementType, Seq] =
+    filterEdgesQuery(edge.label, edge.idA, edge.tagA, Some(edge.idB), Some(edge.tagB))
+
+  def filterEdgesQuery(label: Option[Label], idA: Id, tagA: core.Tag, idB: Option[Id], tagB: Option[core.Tag])
+    : Query[SlickEdges, SlickEdges#TableElementType, Seq] = {
+      val q1 = slickEdges.filter(e => e.idA === idA.v && e.tagA === tagA.v)
+      val q2 = label.fold(q1)(l => q1.filter(_.label === label.map(_.v)))
+      val q3 = idB.fold(q2)(i => q2.filter(_.idB === i.v))
+      tagB.fold(q3)(t => q3.filter(_.tagB === t.v))
+    }
+
+  def slickNodeToNode[T : NodeManifest](v: SlickNode): Error \/ Node[T] =
+    \/.fromTryCatchNonFatal(v.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
+      .bimap(t => Error(s"unable to parse $v to Node", Some(t)), Node[T](Id(v.id), _))
+
+  def nodeToSlickNode[T : NodeManifest](v: Node[T]): SlickNode =
+    SlickNode(v.id.v, NodeManifest[T].tag.v, v.content.toJson(NodeManifest[T].jsonFormat).compactPrint)
+
+  def slickEdgeToEdge(v: SlickEdge): Edge = Edge(v.label.map(Label(_)), Id(v.idA), Tag(v.tagA), Id(v.idB), Tag(v.tagB))
+
+  def edgeToSlickEdge(v: Edge): SlickEdge = SlickEdge(v.label.map(_.v), v.idA.v, v.tagA.v, v.idB.v, v.tagB.v)
+
+  def slick[T](op: => Error \/ T): EitherT[GraphM, Error, T] = EitherTGraphM {
+    \/.fromTryCatchNonFatal(op).fold(e => Error("unhandled slick error", Some(e)).left, identity)
+  }
 
 }

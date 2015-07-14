@@ -5,7 +5,7 @@ import scalaz._, Scalaz._
 import shapeless.contrib.scalaz._
 import spray.json._, DefaultJsonProtocol._
 import sylvestris.core._, Graph._, Relationship._
-import sylvestris.core.fixtures.model._
+import sylvestris.core.fixtures._, model._
 
 //TODO make this a trait and use the withgraph business...
 abstract class NodeOpsTest extends Properties("NodeOpsTest") {
@@ -16,14 +16,15 @@ abstract class NodeOpsTest extends Properties("NodeOpsTest") {
       implicit val oneToOne = new OneToOne[Content1, Content2]
       val toEdge = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
       val fromEdge = Edge(None, node2.id, Content2.nodeManifest.tag, node1.id, Content1.nodeManifest.tag)
-      (for {
-        _ <- addNode(node1)
-        _ <- addNode(node2)
-        _ <- addEdges(Set(toEdge))
-        _ <- addEdges(Set(fromEdge))
-      } yield {}).run.run(g)
-
-      assert(node1.toOne[Content2].run.run(g) === Some(node2).right)
+      runAssertIsRight(g) {
+        for {
+          _ <- addNode(node1)
+          _ <- addNode(node2)
+          _ <- addEdges(Set(toEdge))
+          _ <- addEdges(Set(fromEdge))
+        } yield {}
+      }
+      node1.toOne[Content2].run.run(g) === Some(node2).right &&
       node2.toOne[Content1].run.run(g) === Some(node1).right
     }
   }
@@ -34,15 +35,17 @@ abstract class NodeOpsTest extends Properties("NodeOpsTest") {
       val edges = Set(node2, node3).map(n => Set(
           Edge(None, node1.id, Content1.nodeManifest.tag, n.id, Content2.nodeManifest.tag),
           Edge(None, n.id, Content2.nodeManifest.tag, node1.id, Content1.nodeManifest.tag))).flatten
-      (for {
-        _ <- addNode(node1)
-        _ <- addNode(node2)
-        _ <- addNode(node3)
-        _ <- addEdges(edges)
-      } yield {}).run.run(g)
+      runAssertIsRight(g) {
+        for {
+          _ <- addNode(node1)
+          _ <- addNode(node2)
+          _ <- addNode(node3)
+          _ <- addEdges(edges)
+        } yield {}
+      }
 
-      assert(node1.toMany[Content2].run.run(g) === Set(node2, node3).right)
-      assert(node2.toOne[Content1].run.run(g) === Some(node1).right)
+      node1.toMany[Content2].run.run(g) === Set(node2, node3).right &&
+      node2.toOne[Content1].run.run(g) === Some(node1).right &&
       node3.toOne[Content1].run.run(g) === Some(node1).right
     }
   }
@@ -50,16 +53,18 @@ abstract class NodeOpsTest extends Properties("NodeOpsTest") {
   property("toOne(Node) set") = forAll { (node1: Node[Content1], node2: Node[Content2]) =>
     (node1.id =/= node2.id) ==> withGraph { g =>
       implicit val oneToOne = new OneToOne[Content1, Content2]
-      (for {
-        _ <- addNode(node1)
-        _ <- addNode(node2)
-        _ <- node1.toOne[Content2](Some(node2))
-      } yield {}).run.run(g)
+      runAssertIsRight(g) {
+        for {
+          _ <- addNode(node1)
+          _ <- addNode(node2)
+          _ <- node1.toOne[Content2](Some(node2))
+        } yield {}
+      }
 
       val expectedTo = Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag)
       val expectedFrom = Edge(None, node2.id, Content2.nodeManifest.tag, node1.id, Content1.nodeManifest.tag)
 
-      assert(getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set(expectedTo).right)
+      getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set(expectedTo).right &&
       getEdges(node2.id, Content2.nodeManifest.tag).run.run(g) === Set(expectedFrom).right
     }
   }
@@ -70,16 +75,18 @@ abstract class NodeOpsTest extends Properties("NodeOpsTest") {
       val edges = Set(
         Edge(None, node1.id, Content1.nodeManifest.tag, node2.id, Content2.nodeManifest.tag),
         Edge(None, node2.id, Content2.nodeManifest.tag, node1.id, Content1.nodeManifest.tag))
-      (for {
-        _ <- addNode(node1)
-        _ <- addNode(node2)
-        _ <- addEdges(edges)
-      } yield {}).run.run(g)
+        runAssertIsRight(g) {
+          for {
+            _ <- addNode(node1)
+            _ <- addNode(node2)
+            _ <- addEdges(edges)
+          } yield {}
+        }
 
       // TODO having to type the None is annoying
       node1.toOne[Content2](Option.empty[Node[Content2]]).run.run(g)
 
-      assert(getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set.empty[Edge].right)
+      getEdges(node1.id, Content1.nodeManifest.tag).run.run(g) === Set.empty[Edge].right &&
       getEdges(node2.id, Content2.nodeManifest.tag).run.run(g) === Set.empty[Edge].right
     }
   }
