@@ -1,4 +1,8 @@
-A Graph Modeling Layer for C3
+
+
+Sylvestris
 ===============
 
-This contains explorations around a new graph modeling layer for C3
+[![Build Status](https://magnum.travis-ci.com/janrain/sylvestris.svg?token=T97q5kkydgzJpGmtLcRV)](https://magnum.travis-ci.com/janrain/sylvestris)
+
+A graph modeling library
