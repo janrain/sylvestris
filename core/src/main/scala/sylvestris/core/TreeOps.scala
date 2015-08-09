@@ -2,15 +2,20 @@ package sylvestris.core
 
 import scalaz.{ \/, EitherT }
 
-case class TreeOps[T : NodeManifest](node: Node[T]) {
+object TreeOps {
   val parentLabel = Label("parent")
   val childLabel = Label("child")
 
-  implicit val toOne = new ToOne[T, T] {
+}
+
+case class TreeOps[T : NodeManifest](node: Node[T]) {
+  import TreeOps._
+
+  implicit val toOne = new OneToOne[T, T] {
     override val label = Some(Labels(parentLabel, childLabel))
   }
 
-  implicit val toMany = new ToMany[T, T] {
+  implicit val toMany = new OneToMany[T, T] {
     override val label = Some(Labels(childLabel, parentLabel))
   }
 

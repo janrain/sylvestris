@@ -31,7 +31,7 @@ lazy val commonSettings = Seq(
 
   addCompilerPlugin("com.foursquare.lint" %% "linter" % "0.1.10"),
 
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.6.0"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.6.2"),
 
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "10", "-verbosity", "1"))
 

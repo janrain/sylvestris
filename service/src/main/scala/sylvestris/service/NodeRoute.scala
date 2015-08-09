@@ -1,59 +1,58 @@
 package sylvestris.service
 
-import scalaz.\/
+import scalaz.{ \/, EitherT }
 import scalaz.syntax.equal._
+import spray.http.StatusCodes.BadRequest
+import spray.httpx.marshalling._
 import spray.httpx.SprayJsonSupport._
 import spray.json._, DefaultJsonProtocol._
 import spray.routing._, HttpService._
 import sylvestris._, core._, Graph._, service.common._
 
-// TODO : find home
-object disjunctionWriter {
-  implicit def jsonFormatter[T : JsonFormat, U : JsonFormat] = new RootJsonWriter[T \/ U] {
-    def write(v: T \/ U) = v.fold(_.toJson, _.toJson)
-  }
-}
-
 case class NodeRoute[T](graph: Graph)
   (implicit nm: NodeManifest[T], val pathSegment: PathSegment[T])  {
 
   import nm.jsonFormat
-  import disjunctionWriter._
 
   val tag = nm.tag
 
   val tableOfContents =
-    complete {
-      nodes().run.run(graph).map(_.map(_.id.v))
-    }
+    nodes().run.run(graph).fold(
+      i => respondWithStatus(BadRequest)(complete(i)),
+      i => complete(i.map(_.id.v)))
+
+  // TODO : be more precise with error status codes
+
+  def handleDisjunction(v: ToResponseMarshallable \/ ToResponseMarshallable) =
+    v.fold(i => respondWithStatus(BadRequest)(complete(i)), complete(_))
+
+  def handle[U : ToResponseMarshaller, V : ToResponseMarshaller](
+    nodeWithRelationshipsOps: NodeWithRelationshipsOps,
+    f: NodeWithRelationshipsOps => EitherT[GraphM, U, V]) =
+    f(nodeWithRelationshipsOps).run.run(graph)
+      .fold(i => respondWithStatus(BadRequest)(complete(i)), complete(_))
 
   def create(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     entity(as[NodeWithRelationships[T]]) { nodeWithRelationships =>
-      complete {
-        nodeWithRelationshipsOps.addNodeWithRelationships[T](nodeWithRelationships).run.run(graph)
-      }
+      handle(nodeWithRelationshipsOps, _.addNodeWithRelationships[T](nodeWithRelationships))
     }
 
   def read(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
-    complete {
-      nodeWithRelationshipsOps.nodeWithRelationships(id).run.run(graph)
-    }
+    handle(nodeWithRelationshipsOps, _.nodeWithRelationships(id))
 
   def update(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     entity(as[NodeWithRelationships[T]]) { nodeWithRelationships =>
-      complete {
-        if (nodeWithRelationships.node.id =/= id) {
-          sys.error("id mismatch - view and URL id must match")
-        }
-        nodeWithRelationshipsOps.updateNodeWithRelationships[T](nodeWithRelationships).run.run(graph)
+      if (nodeWithRelationships.node.id =/= id) {
+        respondWithStatus(BadRequest)(complete("id mismatch - view and URL id must match"))
+      }
+      else {
+        handle(nodeWithRelationshipsOps, _.updateNodeWithRelationships[T](nodeWithRelationships))
       }
     }
 
   def delete(id: Id) =
-    complete {
-      removeNode(id).run.run(graph)
-      Map("status" -> "deleted")
-    }
+    removeNode(id).run.run(graph)
+      .fold(i => respondWithStatus(BadRequest)(complete(i)), _ => complete(Map("status" -> "deleted")))
 
   def crudRoute(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     pathPrefix(pathSegment.v)(

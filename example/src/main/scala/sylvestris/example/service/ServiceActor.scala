@@ -1,36 +1,19 @@
 package sylvestris.example.service
 
+import scalaz.{ \/ }
 import akka.actor.{ Actor, ActorSystem, Props }
 import sylvestris._, core._, service._, common._, example.model._
 import spray.httpx.SprayJsonSupport._
+import spray.json._
 import spray.routing.directives.ExecutionDirectives._
 import spray.routing._
 import shapeless.HNil
 
-object NodeRoutes {
-
-  object pathSegments {
-    implicit val customer = PathSegment[Customer]("customers")
-    implicit val organization = PathSegment[Organization]("orgs")
+// TODO : find home
+object disjunctionWriter {
+  implicit def jsonFormatter[T : JsonFormat, U : JsonFormat] = new RootJsonWriter[T \/ U] {
+    def write(v: T \/ U) = v.fold(_.toJson, _.toJson)
   }
-
-  import pathSegments._
-
-  val nodeRoutes: List[NodeRoute[_]] =
-    List(
-      NodeRoute[Customer] _,
-      NodeRoute[Organization] _)
-      .map(_(InMemoryGraph()))
-
-  val pathSegmentToTag: Map[PathSegment[_], Tag] = nodeRoutes
-      .map(i => i.pathSegment -> i.tag)
-      .toMap
-
-  val klass = getClass
-
-  // TODO : stringly package
-  val nodeWithRelationshipsOps: NodeWithRelationshipsOps =
-    NodeWithRelationshipsOps(RelationshipMappings("sylvestris.example").mapping, pathSegmentToTag)
 }
 
 object HandleExceptions extends Directive0 {

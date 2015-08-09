@@ -18,7 +18,7 @@ abstract class NodeOps[T : NodeManifest] {
   private def to[U : NodeManifest : Relationship[T, ?]]: EitherT[GraphM, Error, Set[Node[U]]] = {
     val rel = Relationship[T, U]
     for {
-      edges <- getEdges(rel.label.map(_.`t->u`), node.id, rel.tNodeManifest.tag, rel.uNodeManifest.tag)
+      edges <- getEdges(rel.label.map(_.`t->u`), node.id, NodeManifest[T].tag, NodeManifest[U].tag)
       // TODO returning only an error here, but there might be multiple errors (one for each getNode)
       nodes <- edges.map(edge => getNode[U](edge.idB)).toList.sequenceU
     } yield nodes.toSet

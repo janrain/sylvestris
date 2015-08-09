@@ -23,12 +23,16 @@ object boot {
 
   def main(args: Array[String]): Unit = {
 
-    populate.run(InMemoryGraph())
+    val graph = InMemoryGraph()
+
+    populate.run(graph)
 
     implicit val actorSystem = ActorSystem("service")
 
+    val nodeRoutes = NodeRoutes(graph)
+
     val service = actorSystem.actorOf(
-      Props(classOf[ServiceActor], NodeRoutes.nodeRoutes, NodeRoutes.nodeWithRelationshipsOps))
+      Props(classOf[ServiceActor], nodeRoutes.routes, nodeRoutes.nodeWithRelationshipsOps, graph))
 
     IO(Http) ! Http.Bind(service, interface = "0.0.0.0", port = 8080)
 

@@ -10,9 +10,6 @@ import spray.json._
 import sylvestris.core, core._
 import sylvestris.slick.SlickGraph._
 
-// TODO : update to slick 3.0
-// TODO : .transact
-
 class SlickGraph(implicit session: Session) extends Graph {
 
   for (t <- List(slickNodes, slickEdges) if MTable.getTables(t.baseTableRow.tableName).list.isEmpty) {

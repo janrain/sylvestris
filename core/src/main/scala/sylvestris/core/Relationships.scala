@@ -3,43 +3,97 @@ package sylvestris.core
 import org.reflections.Reflections
 import scalaz.Scalaz._
 
-sealed class Relationship[T : NodeManifest, U : NodeManifest] {
-  val tNodeManifest = NodeManifest[T]
-  val uNodeManifest = NodeManifest[U]
+sealed trait Relationship[T, U] {
+  def tNodeManifest: NodeManifest[T]
+  def uNodeManifest: NodeManifest[U]
+
+  type ReverseRelationship <: Relationship[U, T]
+
+  def reverse: ReverseRelationship
 
   case class Labels(`t->u`: Label, `u->t`: Label)
 
   def label: Option[Labels] = None
 }
 
-class ToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
-
-class ToMany[T : NodeManifest, U : NodeManifest] extends Relationship[T, U]
-
-class OneToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
-
-class OneToMany[T : NodeManifest, U : NodeManifest] extends ToMany[T, U]
-
-class ManyToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U]
-
-class Tree[T : NodeManifest] extends Relationship[T, T]
-
-case class RelationshipMappings(packagePrefix: String) {
-  // TODO this needs to be done for all relationship types
-  lazy val mapping: Map[Tag, List[Relationship[_, _]]] =
-    new Reflections(packagePrefix).getSubTypesOf(classOf[OneToOne[_, _]]).toArray.toList
-      .map { i =>
-        val z = i.asInstanceOf[Class[OneToOne[_, _]]].newInstance
-        Map(
-          z.tNodeManifest.tag -> List[Relationship[_, _]](z),
-          z.uNodeManifest.tag -> List[Relationship[_, _]](new OneToOne()(z.uNodeManifest, z.tNodeManifest)))
-      }
-      .suml
+abstract class ToOne[T : NodeManifest, U : NodeManifest] extends Relationship[T, U] {
+  def tNodeManifest = NodeManifest[T]
+  def uNodeManifest = NodeManifest[U]
 }
 
-//object ToOne {
-//  def apply[T : NodeManifest, U : NodeManifest : ToOne[T, ?]] = implicitly[ToOne[T, U]]
-//}
+abstract class ToMany[T : NodeManifest, U : NodeManifest] extends Relationship[T, U] {
+  def tNodeManifest = NodeManifest[T]
+  def uNodeManifest = NodeManifest[U]
+}
+
+object OneToOne {
+  def apply[T : NodeManifest, U : NodeManifest] = new OneToOne[T, U]
+}
+
+class OneToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U] {
+  type ReverseRelationship = OneToOne[U, T]
+
+  def reverse = OneToOne[U, T]
+}
+
+object OneToMany {
+  def apply[T : NodeManifest, U : NodeManifest] = new OneToMany[T, U]
+}
+
+object ManyToOne {
+  def apply[T : NodeManifest, U : NodeManifest] = new ManyToOne[T, U]
+}
+
+class OneToMany[T : NodeManifest, U : NodeManifest] extends ToMany[T, U] {
+  type ReverseRelationship = ManyToOne[U, T]
+
+  def reverse = ManyToOne[U, T]
+}
+
+class ManyToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U] {
+  type ReverseRelationship = OneToMany[U, T]
+
+  def reverse = OneToMany[U, T]
+}
+
+class Tree[T : NodeManifest] extends Relationship[T, T] {
+  def tNodeManifest = NodeManifest[T]
+  def uNodeManifest = NodeManifest[T]
+
+  type ReverseRelationship = Tree[T]
+
+  def reverse = this
+}
+
+case class RelationshipMappings(packagePrefix: String) {
+  // TODO : thar be dragons
+  def tagMap[T <: Relationship[_, _]](`class`: Class[T]): Map[Tag, List[Relationship[_, _]]] =
+    new Reflections(packagePrefix).getSubTypesOf(`class`).toArray.toList
+      .map { i =>
+        val z: T = i.asInstanceOf[Class[T]].newInstance
+        Map(
+          z.tNodeManifest.tag -> List[Relationship[_, _]](z),
+          z.uNodeManifest.tag -> List[Relationship[_, _]](z.reverse)) }
+      .suml
+
+  // TODO : investigating infer implicit
+  // import reflect.macros._, scala.language.experimental.macros
+  // def lookupImplicitImpl[T : c.WeakTypeTag](c: blackbox.Context): c.Expr[T] = { import c.mirror._; val t = c.inferImplicitValue(weakTypeOf[T]); println(t); c.Expr(t) }
+  // def lookupImplicit[T]: T = macro lookupImplicitImpl[T]
+  // scala> val z = lookupImplicit[Int]
+  // <empty>
+  // <empty>
+  // z: Int = 0
+
+  // TODO : this needs to be done for all relationship types
+  lazy val mapping: Map[Tag, List[Relationship[_, _]]] =
+    List(
+      tagMap(classOf[OneToOne[_, _]]),
+      tagMap(classOf[OneToMany[_, _]]),
+      tagMap(classOf[ManyToOne[_, _]]),
+      tagMap(classOf[Tree[_]])).suml
+
+}
 
 object Relationship {
 
@@ -56,21 +110,5 @@ object Relationship {
   def oneToMany[T, U](implicit ev: OneToMany[T, U]) = true
 
   def manyToOne[T, U](implicit ev: ManyToOne[T, U]) = true
-
-  // def validRelationship
-
-  // def relationships(packagePrefix: String): List[Relationship[_, _]] = {
-  //   val reflections = new Reflections(packagePrefix)
-  //
-  //   // TODO : brittle and verbose for now; looks like we can't get subtypes of subtypes; revisit
-  //   val relationships = List(
-  //     reflections.getSubTypesOf(classOf[graph.OneToOne[_, _]]),
-  //     reflections.getSubTypesOf(classOf[graph.OneToMany[_, _]]),
-  //     reflections.getSubTypesOf(classOf[graph.ManyToOne[_, _]]))
-  //
-  //   relationships
-  //     .flatMap(_.toArray.toList)
-  //     .map(_.asInstanceOf[Class[graph.Relationship[_, _]]].newInstance)
-  // }
 
 }
