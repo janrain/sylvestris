@@ -50,20 +50,20 @@ case class NodeRoute[T](graph: Graph)
       }
     }
 
-  def delete(id: Id) =
-    removeNode(id).run.run(graph)
-      .fold(i => respondWithStatus(BadRequest)(complete(i)), _ => complete(Map("status" -> "deleted")))
+  def remove(id: Id) = complete {
+    removeNode(id).run.run(graph).fold(BadRequest -> _, _ => Map("status" -> "deleted"))
+  }
 
   def crudRoute(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
-    pathPrefix(pathSegment.v)(
+    pathPrefix(pathSegment.v) {
       pathEnd(
         get(tableOfContents) ~
         post(create(nodeWithRelationshipsOps))) ~
-      path(idMatcher)(id =>
+      path(idMatcher) { id =>
         get(read(id, nodeWithRelationshipsOps)) ~
         put(update(id, nodeWithRelationshipsOps)) ~
-        HttpService.delete(delete(id))
-      )
-    )
+        delete(remove(id))
+      }
+    }
 
 }

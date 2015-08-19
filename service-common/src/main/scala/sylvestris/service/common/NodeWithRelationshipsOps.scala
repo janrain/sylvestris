@@ -12,6 +12,8 @@ import sylvestris._, core._, Graph._
 
 object NodeWithRelationshipsOps {
   case class Relationship(id: Id, tag: Tag, label: Option[Label])
+
+  val NodePathExtractor = "/api/(.*?)/(.*)".r
 }
 
 case class NodeWithRelationshipsOps(
@@ -19,12 +21,10 @@ case class NodeWithRelationshipsOps(
   pathSegmentToTag: Map[PathSegment[_], Tag],
   tagToPathSegment: Map[Tag, PathSegment[_]]) {
 
-  val NodePathExtractor = "/api/(.*?)/(.*)".r
-
   def splitNodePath(nodePath: String): Error \/ (Tag, Id) = {
     val invalidNodePath = Error(s"invalid node path $nodePath")
     nodePath match {
-      case NodePathExtractor(pathSegment, id) =>
+      case NodeWithRelationshipsOps.NodePathExtractor(pathSegment, id) =>
         pathSegmentToTag
           .get(PathSegment(pathSegment))
           .map(tag => (tag, Id(id)))
