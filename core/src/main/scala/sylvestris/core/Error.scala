@@ -1,6 +1,6 @@
 package sylvestris.core
 
-import scalaz.Equal
+import algebra.Eq
 import spray.json._
 
 case class Error(message: String, throwable: Option[Throwable] = None)
@@ -12,5 +12,5 @@ object Error {
     def read(v: JsValue) = ???
   }
 
-  implicit val eqInstance = Equal.equalA[Error]
+  implicit val eqInstance = Eq.fromUniversalEquals[Error]
 }

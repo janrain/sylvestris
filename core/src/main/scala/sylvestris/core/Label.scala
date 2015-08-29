@@ -1,9 +1,9 @@
 package sylvestris.core
 
-import scalaz.Equal
+import algebra.Eq
 
 object Label {
-  implicit val eqInstance = Equal.equalA[Label]
+  implicit val eqInstance = Eq.fromUniversalEquals[Label]
 }
 
 case class Label(v: String) extends AnyVal

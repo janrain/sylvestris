@@ -1,9 +1,9 @@
 package sylvestris.core
 
-import scalaz.Equal
+import algebra.Eq
 
 object Tag {
-  implicit val eqInstance = Equal.equalA[Tag]
+  implicit val eqInstance = Eq.fromUniversalEquals[Tag]
 }
 
 case class Tag(v: String)

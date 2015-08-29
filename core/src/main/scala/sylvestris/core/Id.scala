@@ -1,9 +1,9 @@
 package sylvestris.core
 
-import scalaz.Equal
+import algebra.Eq
 
 object Id {
-  implicit val eqInstance = Equal.equalA[Id]
+  implicit val eqInstance = Eq.fromUniversalEquals[Id]
 }
 
 case class Id(v: String)

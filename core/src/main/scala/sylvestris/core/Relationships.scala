@@ -1,7 +1,7 @@
 package sylvestris.core
 
+import cats.implicits._
 import org.reflections.Reflections
-import scalaz.Scalaz._
 
 sealed trait Relationship[T, U] {
   def tNodeManifest: NodeManifest[T]

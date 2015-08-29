@@ -1,7 +1,7 @@
 package sylvestris.example.service
 
-import scalaz.{ \/ }
-import akka.actor.{ Actor, ActorSystem, Props }
+import cats.data.Xor
+import akka.actor.Actor
 import sylvestris._, core._, service._, common._, example.model._
 import spray.httpx.SprayJsonSupport._
 import spray.json._
@@ -11,8 +11,8 @@ import shapeless.HNil
 
 // TODO : find home
 object disjunctionWriter {
-  implicit def jsonFormatter[T : JsonFormat, U : JsonFormat] = new RootJsonWriter[T \/ U] {
-    def write(v: T \/ U) = v.fold(_.toJson, _.toJson)
+  implicit def jsonFormatter[T : JsonFormat, U : JsonFormat] = new RootJsonWriter[T Xor U] {
+    def write(v: T Xor U) = v.fold(_.toJson, _.toJson)
   }
 }
 
@@ -41,10 +41,10 @@ class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: Nod
       pathPrefix("org_cust_lens")(
         path(idMatcher)(id =>
           get(
-            complete(CustomLens.get(id).run.run(graph))) ~
+            complete(CustomLens.get(id).value.run(graph))) ~
           put(
             entity(as[CustomData]) { data =>
-              complete(CustomLens.update(id, data).run.run(graph))
+              complete(CustomLens.update(id, data).value.run(graph))
             })))
     }
   }

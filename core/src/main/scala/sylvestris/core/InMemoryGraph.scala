@@ -1,7 +1,7 @@
 package sylvestris.core
 
-import scalaz.{ \/, EitherT }
-import scalaz.Scalaz._
+import cats.data._
+import cats.implicits._
 import spray.json._
 
 object InMemoryGraph {
@@ -20,11 +20,11 @@ trait InMemoryGraph extends Graph {
   var gnodes: Map[Id, GNode] = Map()
   var gedges: Set[Edge] = Set.empty
 
-  def parseNode[T : NodeManifest](v: GNode): Error \/ Node[T] =
-    \/.fromTryCatchNonFatal(v.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
+  def parseNode[T : NodeManifest](v: GNode): Error Xor Node[T] =
+    Xor.fromTryCatch(v.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
       .bimap(t => Error(s"unable to parse $v to Node", Some(t)), Node[T](v.id, _))
 
-  def nodes[T : NodeManifest](): EitherT[GraphM, List[Error], Set[Node[T]]] = EitherTGraphM {
+  def nodes[T : NodeManifest](): XorT[GraphM, List[Error], Set[Node[T]]] = XorTGraphM {
     gnodes
       .collect {
         case (_, gnode) if gnode.tag === NodeManifest[T].tag => parseNode(gnode).bimap(List(_), Set(_))
@@ -33,57 +33,57 @@ trait InMemoryGraph extends Graph {
       .suml
   }
 
-  def getNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
+  def getNode[T : NodeManifest](id: Id): XorT[GraphM, Error, Node[T]] = XorTGraphM {
     gnodes
       .values
       .find(n => n.id === id && n.tag === NodeManifest[T].tag)
-      .toRightDisjunction(Error(s"$id not found"))
+      .toRightXor(Error(s"$id not found"))
       .flatMap(parseNode[T])
   }
 
-  def addNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
+  def addNode[T : NodeManifest](node: Node[T]): XorT[GraphM, Error, Node[T]] = XorTGraphM {
     gnodes += node.id -> GNode(node)
     node.right
   }
 
-  def updateNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
+  def updateNode[T : NodeManifest](node: Node[T]): XorT[GraphM, Error, Node[T]] = XorTGraphM {
     gnodes
       .get(node.id)
       .map { n => gnodes += node.id -> GNode(node); node }
-      .toRightDisjunction(Error("node not found"))
+      .toRightXor(Error("node not found"))
   }
 
-  def removeNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = EitherTGraphM {
+  def removeNode[T : NodeManifest](id: Id): XorT[GraphM, Error, Node[T]] = XorTGraphM {
     val tag = NodeManifest[T].tag
     val node = gnodes.get(id)
     gnodes -= id
     gedges = gedges.filterNot(e => (e.idA === id && e.tagA === tag) || (e.idB === id && e.tagB === tag))
     node
-      .toRightDisjunction(Error("node not found"))
+      .toRightXor(Error("node not found"))
       .flatMap(parseNode[T])
   }
 
-  def getEdges(id: Id, tag: Tag): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
+  def getEdges(id: Id, tag: Tag): XorT[GraphM, Error, Set[Edge]] = XorTGraphM {
     gedges.filter(e => e.idA === id && e.tagA === tag).right
   }
 
-  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] =
-    EitherTGraphM {
+  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): XorT[GraphM, Error, Set[Edge]] =
+    XorTGraphM {
       gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB && e.label === label).right
     }
 
 
-  def addEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
+  def addEdges(edges: Set[Edge]): XorT[GraphM, Error, Set[Edge]] = XorTGraphM {
     gedges ++= edges
     edges.right
   }
 
-  def removeEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
+  def removeEdges(edges: Set[Edge]): XorT[GraphM, Error, Set[Edge]] = XorTGraphM {
     gedges = gedges -- edges
     edges.right
   }
 
-  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] = EitherTGraphM {
+  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): XorT[GraphM, Error, Set[Edge]] = XorTGraphM {
     val removedGedges = gedges.filter(e => e.idA === idA && e.tagA === tagA && e.tagB === tagB)
     gedges --= removedGedges
     removedGedges.right

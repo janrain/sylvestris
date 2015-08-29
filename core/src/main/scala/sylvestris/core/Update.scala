@@ -1,7 +1,7 @@
 package sylvestris.core
 
-import scalaz.EitherT
+import cats.data.XorT
 
 trait Update[T, U] {
-  def update(id: Id, data: U): EitherT[GraphM, Error, U]
+  def update(id: Id, data: U): XorT[GraphM, Error, U]
 }

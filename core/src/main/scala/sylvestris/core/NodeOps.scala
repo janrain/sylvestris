@@ -1,21 +1,21 @@
 package sylvestris.core
 
 import Graph._
-import scalaz.EitherT
-import scalaz.Scalaz._
+import cats.data._
+import cats.implicits._
 
 abstract class NodeOps[T : NodeManifest] {
   def node: Node[T]
 
-  def toOne[U : NodeManifest : ToOne[T, ?]]: EitherT[GraphM, Error, Option[Node[U]]] =
+  def toOne[U : NodeManifest : ToOne[T, ?]]: XorT[GraphM, Error, Option[Node[U]]] =
     to[U].flatMapF { nodes => GraphM {
       if (nodes.size > 1) Error(s"More than one node returned for $node, $nodes").left
       else nodes.headOption.right
     }}
 
-  def toMany[U : NodeManifest : ToMany[T, ?]]: EitherT[GraphM, Error, Set[Node[U]]] = to[U]
+  def toMany[U : NodeManifest : ToMany[T, ?]]: XorT[GraphM, Error, Set[Node[U]]] = to[U]
 
-  private def to[U : NodeManifest : Relationship[T, ?]]: EitherT[GraphM, Error, Set[Node[U]]] = {
+  private def to[U : NodeManifest : Relationship[T, ?]]: XorT[GraphM, Error, Set[Node[U]]] = {
     val rel = Relationship[T, U]
     for {
       edges <- getEdges(rel.label.map(_.`t->u`), node.id, NodeManifest[T].tag, NodeManifest[U].tag)
@@ -24,10 +24,10 @@ abstract class NodeOps[T : NodeManifest] {
     } yield nodes.toSet
   }
 
-  def toOne[U : NodeManifest : ToOne[T, ?]](uNode: Option[Node[U]]): EitherT[GraphM, Error, Unit] =
+  def toOne[U : NodeManifest : ToOne[T, ?]](uNode: Option[Node[U]]): XorT[GraphM, Error, Unit] =
     toOne(uNode.map(_.id))
 
-  def toOne(idU: Option[Id])(implicit relationship: ToOne[_, _]): EitherT[GraphM, Error, Unit] = {
+  def toOne(idU: Option[Id])(implicit relationship: ToOne[_, _]): XorT[GraphM, Error, Unit] = {
     val tagT = relationship.tNodeManifest.tag
     val tagU = relationship.uNodeManifest.tag
     for {
@@ -40,10 +40,10 @@ abstract class NodeOps[T : NodeManifest] {
     } yield {}
   }
 
-  def toMany[U : NodeManifest : ToMany[T, ?]](nodes: Set[Node[U]]): EitherT[GraphM, Error, Unit] =
+  def toMany[U : NodeManifest : ToMany[T, ?]](nodes: Set[Node[U]]): XorT[GraphM, Error, Unit] =
     toMany(nodes.map(_.id))
 
-  def toMany(ids: Set[Id])(implicit relationship: ToMany[_, _]): EitherT[GraphM, Error, Unit] = {
+  def toMany(ids: Set[Id])(implicit relationship: ToMany[_, _]): XorT[GraphM, Error, Unit] = {
     val tagT = relationship.tNodeManifest.tag
     val tagU = relationship.uNodeManifest.tag
     for {
@@ -56,7 +56,7 @@ abstract class NodeOps[T : NodeManifest] {
   }
 
   private def removeToOneEdges(tagT: Tag, idU: Id, tagU: Tag)(implicit relationship: Relationship[_, _])
-    : EitherT[GraphM, Error, Unit] = {
+    : XorT[GraphM, Error, Unit] = {
     relationship match {
       case r : ToOne[_, _] =>
         for {
@@ -64,7 +64,7 @@ abstract class NodeOps[T : NodeManifest] {
           _ <- removeEdges(edges.map(e => Edge(e.label, e.idB, e.tagB, e.idA, e.tagA)))
           _ <- removeEdges(idU, tagU, tagT)
         } yield {}
-      case _ => EitherT(GraphM(().right[Error]))
+      case _ => XorT(GraphM(().right[Error]))
     }
   }
 

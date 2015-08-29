@@ -1,4 +1,3 @@
-- PUT remove relationships not working
 - create a NodePath data type along with associated json serialization
 - clean up Relationship name clash
 - test CRUD routes

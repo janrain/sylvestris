@@ -1,7 +1,7 @@
 package sylvestris.example.model
 
-import scalaz.{ \/, EitherT }
-import scalaz.syntax.std.option._
+import cats.data.XorT
+import cats.implicits._
 import spray.json._, DefaultJsonProtocol._
 import sylvestris.core._, Graph._
 
@@ -12,19 +12,19 @@ object CustomData {
 }
 
 object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
-  def get(id: Id): EitherT[GraphM, Error, CustomData] =
+  def get(id: Id): XorT[GraphM, Error, CustomData] =
     for {
       org <- getNode[Organization](id)
       customerOpt <- org.toOne[Customer]
-      customer <- EitherT(GraphM(customerOpt.toRightDisjunction(Error("Customer not defined"))))
+      customer <- XorT(GraphM(customerOpt.toRightXor(Error("Customer not defined"))))
     }
     yield CustomData(org.content.name, customer.content.name)
 
-  def update(id: Id, data: CustomData): EitherT[GraphM, Error, CustomData] =
+  def update(id: Id, data: CustomData): XorT[GraphM, Error, CustomData] =
     for {
       org <- getNode[Organization](id)
       customerOpt <- org.toOne[Customer]
-      customer <- EitherT(GraphM(customerOpt.toRightDisjunction(Error("Customer not defined"))))
+      customer <- XorT(GraphM(customerOpt.toRightXor(Error("Customer not defined"))))
       _ <- updateNode(org.copy(content = org.content.copy(name = data.orgName)))
       _ <- updateNode(customer.copy(content = customer.content.copy(name = data.customerName)))
     }

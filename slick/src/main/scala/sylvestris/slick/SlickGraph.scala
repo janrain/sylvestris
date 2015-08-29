@@ -1,8 +1,7 @@
 package sylvestris.slick
 
-import scalaz.{ \/, EitherT }
-import scalaz.std, std.anyVal._, std.list._
-import scalaz.syntax._, either._, equal._, traverse._
+import cats.data._
+import cats.implicits._
 import scala.slick.ast.ColumnOption.DBType
 import scala.slick.driver.PostgresDriver.simple.{ Tag => _, _ }
 import scala.slick.jdbc.meta.MTable
@@ -16,11 +15,11 @@ class SlickGraph(implicit session: Session) extends Graph {
     t.ddl.create
   }
 
-  def nodes[T : NodeManifest](): EitherT[GraphM, List[Error], Set[Node[T]]] = EitherTGraphM {
+  def nodes[T : NodeManifest](): XorT[GraphM, List[Error], Set[Node[T]]] = XorTGraphM {
     slickNodes.list.map(slickNodeToNode[T]).sequenceU.bimap(List(_), _.toSet)
   }
 
-  def getNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] = slick {
+  def getNode[T : NodeManifest](id: Id): XorT[GraphM, Error, Node[T]] = slick {
     slickNodes
       .filter(d => d.id === id.v && d.tag === NodeManifest[T].tag.v)
       .list
@@ -33,7 +32,7 @@ class SlickGraph(implicit session: Session) extends Graph {
       }
   }
 
-  def addNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = slick {
+  def addNode[T : NodeManifest](node: Node[T]): XorT[GraphM, Error, Node[T]] = slick {
     if (slickNodes.filter(_.id === node.id.v).run.nonEmpty) {
       Error(s"$node already defined").left
     }
@@ -43,20 +42,20 @@ class SlickGraph(implicit session: Session) extends Graph {
     }
   }
 
-  def updateNode[T : NodeManifest](node: Node[T]): EitherT[GraphM, Error, Node[T]] = slick {
+  def updateNode[T : NodeManifest](node: Node[T]): XorT[GraphM, Error, Node[T]] = slick {
     val updatedCount = slickNodes.filter(_.id === node.id.v).update(nodeToSlickNode(node))
-    if (updatedCount =/= 1) Error(s"updated $updatedCount for $node").left
+    if (updatedCount =!= 1) Error(s"updated $updatedCount for $node").left
     else node.right
   }
 
-  def removeNode[T : NodeManifest](id: Id): EitherT[GraphM, Error, Node[T]] =
+  def removeNode[T : NodeManifest](id: Id): XorT[GraphM, Error, Node[T]] =
     getNode(id).flatMap { node => slick {
       val deletedCount = slickNodes.filter(_.id === id.v).delete
       if (deletedCount < 1) Error(s"$id not deleted").left
       else node.right
     }}
 
-  def getEdges(id: Id, tag: Tag): EitherT[GraphM, Error, Set[Edge]] = slick {
+  def getEdges(id: Id, tag: Tag): XorT[GraphM, Error, Set[Edge]] = slick {
     filterEdgesQuery(id, tag)
       .list
       .map(slickEdgeToEdge)
@@ -64,7 +63,7 @@ class SlickGraph(implicit session: Session) extends Graph {
       .right
   }
 
-  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] = slick {
+  def getEdges(label: Option[Label], idA: Id, tagA: Tag, tagB: Tag): XorT[GraphM, Error, Set[Edge]] = slick {
     filterEdgesQuery(label, idA, tagA, tagB)
       .list
       .map(slickEdgeToEdge)
@@ -72,21 +71,21 @@ class SlickGraph(implicit session: Session) extends Graph {
       .right
   }
 
-  def addEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = slick {
+  def addEdges(edges: Set[Edge]): XorT[GraphM, Error, Set[Edge]] = slick {
     slickEdges ++= edges.map(edgeToSlickEdge)
     edges.right
   }
 
-  def removeEdges(edges: Set[Edge]): EitherT[GraphM, Error, Set[Edge]] = slick {
+  def removeEdges(edges: Set[Edge]): XorT[GraphM, Error, Set[Edge]] = slick {
     val deletedCount = edges.map(filterEdgesQuery).reduce(_++_).delete
-    if (deletedCount =/= edges.size) Error(s"$deletedCount of ${edges.size} deleted, ${edges}").left
+    if (deletedCount =!= edges.size) Error(s"$deletedCount of ${edges.size} deleted, $edges").left
     else edges.right
   }
 
-  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): EitherT[GraphM, Error, Set[Edge]] =
+  def removeEdges(idA: Id, tagA: Tag, tagB: Tag): XorT[GraphM, Error, Set[Edge]] =
     getEdges(None, idA, tagA, tagB).flatMap { edges => slick {
       val deletedCount = filterEdgesQuery(idA, tagA, tagB).delete
-      if (deletedCount =/= edges.size) Error(s"$deletedCount of ${edges.size} deleted, ${edges}").left
+      if (deletedCount =!= edges.size) Error(s"$deletedCount of ${edges.size} deleted, $edges").left
       else edges.right
     }}
 
@@ -158,8 +157,8 @@ object SlickGraph {
       tagB.fold(q3)(t => q3.filter(_.tagB === t.v))
     }
 
-  def slickNodeToNode[T : NodeManifest](v: SlickNode): Error \/ Node[T] =
-    \/.fromTryCatchNonFatal(v.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
+  def slickNodeToNode[T : NodeManifest](v: SlickNode): Error Xor Node[T] =
+    Xor.fromTryCatch(v.content.parseJson.convertTo[T](NodeManifest[T].jsonFormat))
       .bimap(t => Error(s"unable to parse $v to Node", Some(t)), Node[T](Id(v.id), _))
 
   def nodeToSlickNode[T : NodeManifest](v: Node[T]): SlickNode =
@@ -169,8 +168,8 @@ object SlickGraph {
 
   def edgeToSlickEdge(v: Edge): SlickEdge = SlickEdge(v.label.map(_.v), v.idA.v, v.tagA.v, v.idB.v, v.tagB.v)
 
-  def slick[T](op: => Error \/ T): EitherT[GraphM, Error, T] = EitherTGraphM {
-    \/.fromTryCatchNonFatal(op).fold(e => Error("unhandled slick error", Some(e)).left, identity)
+  def slick[T](op: => Error Xor T): XorT[GraphM, Error, T] = XorTGraphM {
+    Xor.fromTryCatch(op).fold(e => Error("unhandled slick error", Some(e)).left, identity)
   }
 
 }

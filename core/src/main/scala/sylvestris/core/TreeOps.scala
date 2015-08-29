@@ -1,6 +1,6 @@
 package sylvestris.core
 
-import scalaz.{ \/, EitherT }
+import cats.data.XorT
 
 object TreeOps {
   val parentLabel = Label("parent")
@@ -19,15 +19,15 @@ case class TreeOps[T : NodeManifest](node: Node[T]) {
     override val label = Some(Labels(childLabel, parentLabel))
   }
 
-  def parent: EitherT[GraphM, Error, Option[Node[T]]] = node.toOne[T]
+  def parent: XorT[GraphM, Error, Option[Node[T]]] = node.toOne[T]
 
-  def children: EitherT[GraphM, Error, Set[Node[T]]] = node.toMany[T]
+  def children: XorT[GraphM, Error, Set[Node[T]]] = node.toMany[T]
 
-  def parent(p: Option[Node[T]]): EitherT[GraphM, Error, Unit] = parent(p.map(_.id))
+  def parent(p: Option[Node[T]]): XorT[GraphM, Error, Unit] = parent(p.map(_.id))
 
-  def parent(id: => Option[Id]): EitherT[GraphM, Error, Unit] = node.toOne(id)
+  def parent(id: => Option[Id]): XorT[GraphM, Error, Unit] = node.toOne(id)
 
-  def children(kids: Set[Node[T]]): EitherT[GraphM, Error, Unit] = children(kids.map(_.id))
+  def children(kids: Set[Node[T]]): XorT[GraphM, Error, Unit] = children(kids.map(_.id))
 
-  def children(ids: => Set[Id]): EitherT[GraphM, Error, Unit] = node.toMany(ids)
+  def children(ids: => Set[Id]): XorT[GraphM, Error, Unit] = node.toMany(ids)
 }

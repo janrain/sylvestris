@@ -1,7 +1,7 @@
 package sylvestris.service
 
-import scalaz.{ \/, EitherT }
-import scalaz.syntax.equal._
+import cats.data._
+import cats.implicits._
 import spray.http.StatusCodes.BadRequest
 import spray.httpx.marshalling._
 import spray.httpx.SprayJsonSupport._
@@ -17,19 +17,19 @@ case class NodeRoute[T](graph: Graph)
   val tag = nm.tag
 
   val tableOfContents =
-    nodes().run.run(graph).fold(
+    nodes().value.run(graph).fold(
       i => respondWithStatus(BadRequest)(complete(i)),
       i => complete(i.map(_.id.v)))
 
   // TODO : be more precise with error status codes
 
-  def handleDisjunction(v: ToResponseMarshallable \/ ToResponseMarshallable) =
+  def handleDisjunction(v: ToResponseMarshallable Xor ToResponseMarshallable) =
     v.fold(i => respondWithStatus(BadRequest)(complete(i)), complete(_))
 
   def handle[U : ToResponseMarshaller, V : ToResponseMarshaller](
     nodeWithRelationshipsOps: NodeWithRelationshipsOps,
-    f: NodeWithRelationshipsOps => EitherT[GraphM, U, V]) =
-    f(nodeWithRelationshipsOps).run.run(graph)
+    f: NodeWithRelationshipsOps => XorT[GraphM, U, V]) =
+    f(nodeWithRelationshipsOps).value.run(graph)
       .fold(i => respondWithStatus(BadRequest)(complete(i)), complete(_))
 
   def create(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
@@ -42,7 +42,7 @@ case class NodeRoute[T](graph: Graph)
 
   def update(id: Id, nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
     entity(as[NodeWithRelationships[T]]) { nodeWithRelationships =>
-      if (nodeWithRelationships.node.id =/= id) {
+      if (nodeWithRelationships.node.id =!= id) {
         respondWithStatus(BadRequest)(complete("id mismatch - view and URL id must match"))
       }
       else {
@@ -51,7 +51,7 @@ case class NodeRoute[T](graph: Graph)
     }
 
   def remove(id: Id) = complete {
-    removeNode(id).run.run(graph).fold(BadRequest -> _, _ => Map("status" -> "deleted"))
+    removeNode(id).value.run(graph).fold(BadRequest -> _, _ => Map("status" -> "deleted"))
   }
 
   def crudRoute(nodeWithRelationshipsOps: NodeWithRelationshipsOps) =
