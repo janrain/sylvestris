@@ -6,7 +6,6 @@
 - example service is still kludgey
 - configurize graph impl used in ServiceActor
 - refactor SlickGraph per .transact
-- how do we migrate current data to this model?
 - add type level tests for Relationships API  (shapeless' illtyped)
 - scoverage
 - add tests based on gaps and scoverage reports
@@ -19,14 +18,13 @@
 - consider fommil/spray-json-shapeless
 - consider rolling with doobie
 - generalize JSON serialization. e.g. Pickle[T]
-- open-source it; keep the result of this work open-source ready
 - logging and audit
 - µtest? scala.js support?
 - prefix projects and associated root folders with sylvestris-
 - consider Free Monads
 - handle empty ids
-- select and add LICENSE.md
 - add CHANGELOG.md
 - data validations
 - triggered views
 - consider data validations as triggered views
+- consider http4s (scalaz at the moment)
