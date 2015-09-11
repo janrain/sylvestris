@@ -30,7 +30,7 @@ trait InMemoryGraph extends Graph {
         case (_, gnode) if gnode.tag === NodeManifest[T].tag => parseNode(gnode).bimap(List(_), Set(_))
       }
       .toList
-      .suml
+      .combineAll
   }
 
   def getNode[T : NodeManifest](id: Id): XorT[GraphM, Error, Node[T]] = XorTGraphM {

@@ -74,7 +74,7 @@ case class RelationshipMappings(packagePrefix: String) {
         Map(
           z.tNodeManifest.tag -> List[Relationship[_, _]](z),
           z.uNodeManifest.tag -> List[Relationship[_, _]](z.reverse)) }
-      .suml
+      .combineAll
 
   // TODO : investigating infer implicit
   // import reflect.macros._, scala.language.experimental.macros
@@ -91,7 +91,7 @@ case class RelationshipMappings(packagePrefix: String) {
       tagMap(classOf[OneToOne[_, _]]),
       tagMap(classOf[OneToMany[_, _]]),
       tagMap(classOf[ManyToOne[_, _]]),
-      tagMap(classOf[Tree[_]])).suml
+      tagMap(classOf[Tree[_]])).combineAll
 
 }
 

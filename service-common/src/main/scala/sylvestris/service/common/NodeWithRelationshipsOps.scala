@@ -79,7 +79,7 @@ case class NodeWithRelationshipsOps(
           relationship -> groupedRelationships.get(tag).orEmpty
         }
       }.toList
-      i.suml
+      i.combineAll
     }
 
   def setRelationshipMappings[T : NodeManifest](
