@@ -1,25 +1,30 @@
-- CRUD routes -- GET & POST are done, need PUT
-    - add relationship labels to web API
+- create a NodePath data type along with associated json serialization
+- clean up Relationship name clash
+- test CRUD routes
 - external API client -- We have GET, need PUT, POST, custom lenses
+- test API client
 - example service is still kludgey
-- how do we migrate current data to this model?
-- tests
-    - add type level tests for Relationships API  (shapeless' illtyped)
+- configurize graph impl used in ServiceActor
+- refactor SlickGraph per .transact
+- add type level tests for Relationships API  (shapeless' illtyped)
 - scoverage
+- add tests based on gaps and scoverage reports
+- update to slick 3.0
 - scalariform
 - wart remover
 - refine error handling
 - generate RAML
 - consider json4s
+- consider fommil/spray-json-shapeless
+- consider rolling with doobie
 - generalize JSON serialization. e.g. Pickle[T]
-- open-source it; keep the result of this work open-source ready
 - logging and audit
 - µtest? scala.js support?
 - prefix projects and associated root folders with sylvestris-
 - consider Free Monads
 - handle empty ids
-- select and add LICENSE.md
 - add CHANGELOG.md
 - data validations
 - triggered views
 - consider data validations as triggered views
+- consider http4s (scalaz at the moment)
