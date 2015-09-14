@@ -11,7 +11,7 @@ object CustomData {
   implicit val jsonFormat = jsonFormat2(apply)
 }
 
-object CustomLens extends View[Organization, CustomData] with Update[Organization, CustomData] {
+object CustomDataView extends View[Organization, CustomData] with Update[Organization, CustomData] {
   def get(id: Id): EitherT[GraphM, Error, CustomData] =
     for {
       org <- getNode[Organization](id)

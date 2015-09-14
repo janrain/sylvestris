@@ -55,13 +55,13 @@ class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: Nod
     pathPrefix("api") {
       nodeRoutes.map(_.crudRoute(nodeWithRelationshipsOps)).reduce(_ ~ _) ~
       // TODO clean this up
-      pathPrefix("org_cust_lens")(
+      pathPrefix("org_cust_view")(
         path(idMatcher)(id =>
           get(
-            complete(CustomLens.get(id).run.run(graph))) ~
+            complete(CustomDataView.get(id).run.run(graph))) ~
           put(
             entity(as[CustomData]) { data =>
-              complete(CustomLens.update(id, data).run.run(graph))
+              complete(CustomDataView.update(id, data).run.run(graph))
             })))
     }
   }
