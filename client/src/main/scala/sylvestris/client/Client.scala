@@ -1,4 +1,4 @@
-package client
+package sylvestris.client
 
 import akka.actor._
 import sylvestris.core._
