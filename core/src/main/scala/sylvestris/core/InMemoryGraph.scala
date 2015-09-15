@@ -2,6 +2,7 @@ package sylvestris.core
 
 import cats.data._
 import cats.implicits._
+import catsclaw.implicits._
 import spray.json._
 
 object InMemoryGraph {

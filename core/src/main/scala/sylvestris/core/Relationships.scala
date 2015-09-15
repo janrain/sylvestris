@@ -1,6 +1,7 @@
 package sylvestris.core
 
 import cats.implicits._
+import catsclaw.implicits._
 import org.reflections.Reflections
 
 sealed trait Relationship[T, U] {

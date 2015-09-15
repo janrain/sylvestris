@@ -50,14 +50,20 @@ lazy val client = project
     "io.spray" %% "spray-client" % sprayVersion))
 
 lazy val core = project
+  .dependsOn(`cats-claw`)
   .settings(commonSettings)
   .settings(libraryDependencies ++= Seq(
     "io.spray" %%  "spray-json" % "1.3.2",
     "org.reflections" % "reflections" % "0.9.10",
-    "org.spire-math" %% "cats-core" % "0.3.0-SNAPSHOT",
+    "org.spire-math" %% "cats-core" % "0.2.0",
     "org.slf4j" % "slf4j-api" % "1.7.12",
     "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
     "com.github.alexarchambault" %% "scalacheck-shapeless_1.12" % "0.3.0" % "test"))
+
+// shim til cats 0.3.0
+lazy val `cats-claw` = project
+  .settings(commonSettings)
+  .settings(libraryDependencies += "org.spire-math" %% "cats-core" % "0.2.0")
 
 lazy val example = project
   .dependsOn(core, service)

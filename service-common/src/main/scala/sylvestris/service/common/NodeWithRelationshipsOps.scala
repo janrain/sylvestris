@@ -2,6 +2,7 @@ package sylvestris.service.common
 
 import cats.data._
 import cats.implicits._
+import catsclaw.implicits._
 import sylvestris._, core._, Graph._
 
 // TODO : supply pathSegmentToTag and tagToPathSegment in another way?
