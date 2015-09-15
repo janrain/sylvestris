@@ -1,7 +1,7 @@
 - create a NodePath data type along with associated json serialization
 - clean up Relationship name clash
 - test CRUD routes
-- external API client -- We have GET, need PUT, POST, custom lenses
+- external API client -- We have GET, need PUT, POST, custom views
 - test API client
 - example service is still kludgey
 - configurize graph impl used in ServiceActor
