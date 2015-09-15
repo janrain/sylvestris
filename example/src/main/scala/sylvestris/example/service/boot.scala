@@ -38,27 +38,3 @@ object boot {
   }
 
 }
-
-/*
-*
-* For toMany relationships
-* def apply[T](nodes: Set[T]) = clears if empty, else replaces
-*
-* For toOne relationships
-* def apply[T](nodes: Option[T]) = clears if empty, else replaces
-*
-* To relationships:
-* * OneToOne
-* * OneToMany
-* * ManyToOne
-* * ManyToMany
-*
-* Operations:
-*
-* Update
-* Replace
-* AddOrUpdate
-* Remove
-*
-*
-*/

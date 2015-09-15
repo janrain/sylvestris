@@ -77,15 +77,6 @@ case class RelationshipMappings(packagePrefix: String) {
           z.uNodeManifest.tag -> List[Relationship[_, _]](z.reverse)) }
       .combineAll
 
-  // TODO : investigating infer implicit
-  // import reflect.macros._, scala.language.experimental.macros
-  // def lookupImplicitImpl[T : c.WeakTypeTag](c: blackbox.Context): c.Expr[T] = { import c.mirror._; val t = c.inferImplicitValue(weakTypeOf[T]); println(t); c.Expr(t) }
-  // def lookupImplicit[T]: T = macro lookupImplicitImpl[T]
-  // scala> val z = lookupImplicit[Int]
-  // <empty>
-  // <empty>
-  // z: Int = 0
-
   // TODO : this needs to be done for all relationship types
   lazy val mapping: Map[Tag, List[Relationship[_, _]]] =
     List(
