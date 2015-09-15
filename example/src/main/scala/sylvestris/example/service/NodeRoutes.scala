@@ -2,14 +2,15 @@ package sylvestris.example.service
 
 import sylvestris._, core._, service._, common._, example.model._
 
-case class NodeRoutes(graph: Graph) {
-
+object NodeRoutes {
   object pathSegments {
     implicit val customer = PathSegment[Customer]("customers")
     implicit val organization = PathSegment[Organization]("orgs")
   }
+}
 
-  import pathSegments._
+case class NodeRoutes(graph: Graph) {
+  import NodeRoutes.pathSegments._
 
   val routes: List[NodeRoute[_]] =
     List(
