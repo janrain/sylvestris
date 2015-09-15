@@ -6,7 +6,7 @@ val akka = "com.typesafe.akka" %% "akka-actor" % "2.3.9"
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.7",
 
-// http://tpolecat.github.io/2014/04/11/scalac-flags.html
+  // http://tpolecat.github.io/2014/04/11/scalac-flags.html
   scalacOptions in (Compile, compile) ++= Seq(
     "-deprecation",
     "-encoding", "UTF-8",

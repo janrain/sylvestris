@@ -5,7 +5,7 @@ import sylvestris.core._
 import scala.concurrent._
 import spray.client.pipelining._
 import spray.http._, Uri._
-import spray.httpx._, unmarshalling._
+import spray.httpx._, marshalling._, unmarshalling._
 import sylvestris.service.common._
 
 case class Client(host: Uri.Host, port: Int = 80, scheme: String = "http")(
@@ -18,12 +18,42 @@ case class Client(host: Uri.Host, port: Int = 80, scheme: String = "http")(
     authority = Uri.Authority(host = host, port = port),
     path = Path("/api/") ++ v)
 
-  def get[T : PathSegment : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]]
-    (id: Id): Future[NodeWithRelationships[T]] = {
-    val pipeline: HttpRequest => Future[NodeWithRelationships[T]] =
-      sendReceive ~> unmarshal[NodeWithRelationships[T]]
+  def pipeline[T : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]]
+    : HttpRequest => Future[NodeWithRelationships[T]] =
+    sendReceive ~> unmarshal[NodeWithRelationships[T]]
 
-    pipeline(
-      Get(path(Path(s"${PathSegment[T].v}/${id.v}"))))
+  def get[T
+    : PathSegment
+    : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]]
+    (id: Id)
+    : Future[NodeWithRelationships[T]] = {
+    pipeline.apply(Get(path(Path(s"${PathSegment[T].v}/${id.v}"))))
   }
+
+  def put[T
+    : PathSegment
+    : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]
+    : λ[U => Marshaller[NodeWithRelationships[U]]]]
+    (v: NodeWithRelationships[T])
+    : Future[NodeWithRelationships[T]] = {
+    pipeline.apply(Put(path(Path(s"${PathSegment[T].v}/${v.node.id.v}")), v))
+  }
+
+  def post[T
+    : PathSegment
+    : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]
+    : λ[U => Marshaller[NodeWithRelationships[U]]]]
+    (v: NodeWithRelationships[T])
+    : Future[NodeWithRelationships[T]] = {
+    pipeline.apply(Post(path(Path(PathSegment[T].v)), v))
+  }
+
+  def delete[T
+    : PathSegment
+    : λ[U => FromResponseUnmarshaller[NodeWithRelationships[U]]]]
+    (id: Id)
+    : Future[NodeWithRelationships[T]] = {
+    pipeline.apply(Delete(path(Path(s"${PathSegment[T].v}/${id.v}"))))
+  }
+
 }

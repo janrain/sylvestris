@@ -19,8 +19,9 @@ object NodeWithRelationships {
           NodeWithRelationships(
             Node(Id(id), content.convertTo[T](NodeManifest[T].jsonFormat)),
             relationships.convertTo[Set[Relationship]])
+        case _ => deserializationError(s"id, content, and relationships expected : $v")
       }
-      case _ => deserializationError("id expected")
+      case v => deserializationError(s"JSON Object expected $v")
     }
   }
 
