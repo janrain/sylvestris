@@ -12,5 +12,5 @@ object Error {
     def read(v: JsValue) = ???
   }
 
-  implicit val eqInstance = Eq.fromUniversalEquals[Error]
+  implicit val eqInstance: Eq[Error] = Eq.fromUniversalEquals[Error]
 }

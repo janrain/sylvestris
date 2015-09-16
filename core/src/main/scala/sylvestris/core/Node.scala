@@ -7,7 +7,7 @@ object Node {
     val node: Node[T] = n
   }
 
-  implicit def eqInstance[T] = Eq.fromUniversalEquals[Node[T]]
+  implicit def eqInstance[T]: Eq[Node[T]] = Eq.fromUniversalEquals[Node[T]]
 }
 
 case class Node[T](id: Id, content: T)
