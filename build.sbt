@@ -53,13 +53,14 @@ lazy val core = project
   .dependsOn(`cats-claw`)
   .settings(commonSettings)
   .settings(libraryDependencies ++= Seq(
-    "io.spray" %%  "spray-json" % "1.3.2",
+    "com.chuusai" %% "shapeless" % "2.2.5",
     "com.github.fommil" %% "spray-json-shapeless" % "1.1.0",
     "org.reflections" % "reflections" % "0.9.10",
     "org.spire-math" %% "cats-core" % "0.2.0",
     "org.slf4j" % "slf4j-api" % "1.7.12",
+    "io.spray" %%  "spray-json" % "1.3.2",
     "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.12" % "0.3.0" % "test"))
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.12" % "0.3.1" % "test"))
 
 // shim til cats 0.3.0
 lazy val `cats-claw` = project
