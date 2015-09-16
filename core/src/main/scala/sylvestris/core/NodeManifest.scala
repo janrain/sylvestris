@@ -4,9 +4,8 @@ import spray.json._
 
 object NodeManifest {
   def apply[T : NodeManifest] = implicitly[NodeManifest[T]]
+  def apply[T](tag: Tag)(implicit jsonFormat: JsonFormat[T]): NodeManifest[T] =
+    new NodeManifest(tag, jsonFormat)
 }
 
-trait NodeManifest[T] {
-  implicit def tag: Tag
-  implicit def jsonFormat: JsonFormat[T]
-}
+class NodeManifest[T](val tag: Tag, val jsonFormat: JsonFormat[T])

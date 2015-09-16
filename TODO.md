@@ -15,7 +15,6 @@
 - refine error handling
 - generate RAML
 - consider json4s
-- consider fommil/spray-json-shapeless
 - consider rolling with doobie
 - generalize JSON serialization. e.g. Pickle[T]
 - logging and audit

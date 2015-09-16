@@ -1,7 +1,8 @@
 package sylvestris.service.common
 
+import fommil.sjs.FamilyFormats._
+import spray.json._
 import sylvestris.core._
-import spray.json._, DefaultJsonProtocol._
 
 case class NodeWithRelationships[T](node: Node[T], relationships: Set[Relationship])
 
@@ -11,7 +12,7 @@ object NodeWithRelationships {
     def write(n: NodeWithRelationships[T]) = JsObject(
       "id" -> JsString(n.node.id.v),
       "content" -> n.node.content.toJson(NodeManifest[T].jsonFormat),
-      "relationships" -> n.relationships.toJson)
+      "relationships" -> n.relationships.toList.toJson)
 
     def read(value: JsValue) = value match {
       case v: JsObject => v.getFields("id", "content", "relationships") match {

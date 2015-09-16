@@ -1,13 +1,14 @@
 package sylvestris.example.service
 
-import cats.data.Xor
 import akka.actor.Actor
-import sylvestris._, core._, service._, common._, example.model._
+import cats.data.Xor
+import fommil.sjs.FamilyFormats._
+import shapeless.HNil
 import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.routing.directives.ExecutionDirectives._
 import spray.routing._
-import shapeless.HNil
+import sylvestris._, core._, service._, common._, example.model._
 
 // TODO : find home
 object disjunctionWriter {

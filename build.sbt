@@ -54,6 +54,7 @@ lazy val core = project
   .settings(commonSettings)
   .settings(libraryDependencies ++= Seq(
     "io.spray" %%  "spray-json" % "1.3.2",
+    "com.github.fommil" %% "spray-json-shapeless" % "1.1.0",
     "org.reflections" % "reflections" % "0.9.10",
     "org.spire-math" %% "cats-core" % "0.2.0",
     "org.slf4j" % "slf4j-api" % "1.7.12",

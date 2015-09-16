@@ -1,22 +1,16 @@
 package sylvestris.core.fixtures
 
-import spray.json._, DefaultJsonProtocol._
+import fommil.sjs.FamilyFormats._
 import sylvestris.core._
 
 object model {
   object Content1 {
-    implicit object nodeManifest extends NodeManifest[Content1] {
-      implicit val tag = Tag("content")
-      implicit val jsonFormat = jsonFormat1(apply)
-    }
+    implicit val nodeManifest = NodeManifest[Content1](Tag("content"))
   }
   case class Content1(v: String)
 
   object Content2 {
-    implicit object nodeManifest extends NodeManifest[Content2] {
-      implicit val tag = Tag("content2")
-      implicit val jsonFormat = jsonFormat1(apply)
-    }
+    implicit val nodeManifest = NodeManifest[Content2](Tag("content2"))
   }
   case class Content2(v: String)
 }
