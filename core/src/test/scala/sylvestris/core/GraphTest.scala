@@ -5,6 +5,11 @@ import org.scalacheck._, Prop._, Shapeless._
 import sylvestris.core.Graph._
 import sylvestris.core.fixtures._, model._
 
+@SuppressWarnings(Array(
+  "org.brianmckenna.wartremover.warts.Any",
+  "org.brianmckenna.wartremover.warts.AsInstanceOf",
+  "org.brianmckenna.wartremover.warts.NonUnitStatements",
+  "org.brianmckenna.wartremover.warts.Throw"))
 abstract class GraphTest extends Properties("Graph") {
   // TODO : this signature will change once transact is in place
   def withGraph[T](f: Graph => T): T

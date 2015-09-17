@@ -6,7 +6,6 @@
 - add type level tests for Relationships API  (shapeless' illtyped)
 - add tests based on gaps and scoverage reports
 - scalariform
-- wart remover
 - refine error handling
 - generate RAML
 - consider json4s

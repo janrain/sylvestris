@@ -20,6 +20,7 @@ object boot {
     yield {}
   }.value
 
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
   def main(args: Array[String]): Unit = {
 
     val graph = InMemoryGraph()

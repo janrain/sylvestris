@@ -11,10 +11,14 @@ object TreeOps {
 case class TreeOps[T : NodeManifest](node: Node[T]) {
   import TreeOps._
 
+  // https://github.com/puffnfresh/wartremover/issues/149
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
   implicit val toOne = new OneToOne[T, T] {
     override val label = Some(Labels(parentLabel, childLabel))
   }
 
+  // https://github.com/puffnfresh/wartremover/issues/149
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
   implicit val toMany = new OneToMany[T, T] {
     override val label = Some(Labels(childLabel, parentLabel))
   }

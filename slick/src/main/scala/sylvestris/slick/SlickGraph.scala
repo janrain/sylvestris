@@ -9,6 +9,7 @@ import spray.json._
 import sylvestris.core, core._
 import sylvestris.slick.SlickGraph._
 
+@SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
 class SlickGraph(implicit session: Session) extends Graph {
 
   for (t <- List(slickNodes, slickEdges) if MTable.getTables(t.baseTableRow.tableName).list.isEmpty) {

@@ -18,7 +18,11 @@ trait InMemoryGraph extends Graph {
     }
   }
 
+  // TODO
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.Var"))
   var gnodes: Map[Id, GNode] = Map()
+  // TODO
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.Var"))
   var gedges: Set[Edge] = Set.empty
 
   def parseNode[T : NodeManifest](v: GNode): Error Xor Node[T] =

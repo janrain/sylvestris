@@ -7,6 +7,11 @@ import sylvestris.core._, Graph._, Relationship._
 import sylvestris.core.fixtures._, model._
 
 //TODO make this a trait and use the withgraph business...
+@SuppressWarnings(Array(
+  "org.brianmckenna.wartremover.warts.Any",
+  "org.brianmckenna.wartremover.warts.AsInstanceOf",
+  "org.brianmckenna.wartremover.warts.NonUnitStatements",
+  "org.brianmckenna.wartremover.warts.Throw"))
 abstract class NodeOpsTest extends Properties("NodeOpsTest") {
   def withGraph[T](f: Graph => T): T
 

@@ -9,11 +9,12 @@ object NodeRoutes {
   }
 }
 
+@SuppressWarnings(Array("org.brianmckenna.wartremover.warts.Any"))
 case class NodeRoutes(graph: Graph) {
   import NodeRoutes.pathSegments._
 
   val routes: List[NodeRoute[_]] =
-    List(
+    List[Graph => NodeRoute[_]](
       NodeRoute[Customer] _,
       NodeRoute[Organization] _)
       .map(_(graph))
@@ -29,5 +30,5 @@ case class NodeRoutes(graph: Graph) {
   val examplePackage = getClass.getPackage.getName.split('.').dropRight(1).mkString(".")
 
   val nodeWithRelationshipsOps: NodeWithRelationshipsOps =
-    NodeWithRelationshipsOps(RelationshipMappings(examplePackage).mapping, pathSegmentToTag, tagToPathSegment)
+    new NodeWithRelationshipsOps(RelationshipMappings(examplePackage).mapping, pathSegmentToTag, tagToPathSegment)
 }

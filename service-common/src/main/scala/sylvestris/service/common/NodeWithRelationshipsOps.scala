@@ -13,7 +13,12 @@ object NodeWithRelationshipsOps {
   val NodePathExtractor = "/api/(.*?)/(.*)".r
 }
 
-case class NodeWithRelationshipsOps(
+@SuppressWarnings(Array(
+  "org.brianmckenna.wartremover.warts.Any",
+  "org.brianmckenna.wartremover.warts.AsInstanceOf",
+  "org.brianmckenna.wartremover.warts.IsInstanceOf",
+  "org.brianmckenna.wartremover.warts.Throw"))
+class NodeWithRelationshipsOps(
   relationshipMappings: Map[Tag, List[core.Relationship[_, _]]],
   pathSegmentToTag: Map[PathSegment[_], Tag],
   tagToPathSegment: Map[Tag, PathSegment[_]]) {

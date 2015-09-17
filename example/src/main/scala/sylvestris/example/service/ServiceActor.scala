@@ -36,7 +36,6 @@ class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: Nod
 
   lazy val route = HandleExceptions {
     pathPrefix("api") {
-      nodeRoutes.map(_.crudRoute(nodeWithRelationshipsOps)).reduce(_ ~ _) ~
       // TODO clean this up
       pathPrefix("org_cust_view")(
         path(idMatcher)(id =>
@@ -45,7 +44,8 @@ class ServiceActor(nodeRoutes: List[NodeRoute[_]], nodeWithRelationshipsOps: Nod
           put(
             entity(as[CustomData]) { data =>
               complete(CustomDataView.update(id, data).value.run(graph))
-            })))
+            }))) ~
+      nodeRoutes.map(_.crudRoute(nodeWithRelationshipsOps)).fold(reject)(_ ~ _)
     }
   }
 

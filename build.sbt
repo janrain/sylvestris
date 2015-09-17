@@ -33,6 +33,9 @@ lazy val commonSettings = Seq(
 
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.6.2"),
 
+  wartremoverErrors in (Compile, compile) ++= Warts.unsafe,
+  wartremoverErrors in (Test, compile) ++= Warts.unsafe,
+
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "10", "-verbosity", "1"))
 
 lazy val root = (project in file("."))

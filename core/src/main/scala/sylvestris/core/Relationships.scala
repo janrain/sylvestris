@@ -31,6 +31,8 @@ object OneToOne {
   def apply[T : NodeManifest, U : NodeManifest] = new OneToOne[T, U]
 }
 
+// https://github.com/puffnfresh/wartremover/issues/149
+@SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
 class OneToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U] {
   type ReverseRelationship = OneToOne[U, T]
 
@@ -45,12 +47,16 @@ object ManyToOne {
   def apply[T : NodeManifest, U : NodeManifest] = new ManyToOne[T, U]
 }
 
+// https://github.com/puffnfresh/wartremover/issues/149
+@SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
 class OneToMany[T : NodeManifest, U : NodeManifest] extends ToMany[T, U] {
   type ReverseRelationship = ManyToOne[U, T]
 
   def reverse = ManyToOne[U, T]
 }
 
+// https://github.com/puffnfresh/wartremover/issues/149
+@SuppressWarnings(Array("org.brianmckenna.wartremover.warts.NonUnitStatements"))
 class ManyToOne[T : NodeManifest, U : NodeManifest] extends ToOne[T, U] {
   type ReverseRelationship = OneToMany[U, T]
 
@@ -66,6 +72,9 @@ class Tree[T : NodeManifest] extends Relationship[T, T] {
   def reverse = this
 }
 
+@SuppressWarnings(Array(
+  "org.brianmckenna.wartremover.warts.Any",
+  "org.brianmckenna.wartremover.warts.AsInstanceOf"))
 case class RelationshipMappings(packagePrefix: String) {
   // TODO : thar be dragons
   def tagMap[T <: Relationship[_, _]](`class`: Class[T]): Map[Tag, List[Relationship[_, _]]] =
