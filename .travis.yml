@@ -2,4 +2,6 @@ language: scala
 scala:
   - 2.11.7
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION clean test
+  - sbt ++$TRAVIS_SCALA_VERSION clean coverage test
+after_success:
+  - pip install --user codecov && codecov

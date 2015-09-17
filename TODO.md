@@ -4,7 +4,6 @@
 - configurize graph impl used in ServiceActor
 - refactor SlickGraph per .transact
 - add type level tests for Relationships API  (shapeless' illtyped)
-- scoverage
 - add tests based on gaps and scoverage reports
 - scalariform
 - wart remover
