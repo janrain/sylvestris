@@ -8,8 +8,11 @@ import spray.http._, Uri._
 import spray.httpx._, marshalling._, unmarshalling._
 import sylvestris.service.common._
 
-case class Client(host: Uri.Host, port: Int = 80, scheme: String = "http")(
-  implicit system: ActorSystem) {
+object Client {
+  def apply(host: Uri.Host)(implicit system: ActorSystem): Client = Client(host, 80, "http")
+}
+
+case class Client(host: Uri.Host, port: Int, scheme: String)(implicit system: ActorSystem) {
 
   import system.dispatcher
 

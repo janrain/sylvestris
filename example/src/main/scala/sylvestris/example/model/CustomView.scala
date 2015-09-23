@@ -2,9 +2,14 @@ package sylvestris.example.model
 
 import cats.data.XorT
 import cats.implicits._
+import spray.json._, DefaultJsonProtocol._
 import sylvestris.core._, Graph._
 
 case class CustomData(orgName: String, customerName: String)
+
+object CustomData {
+  implicit val jsonFormat = jsonFormat2(apply)
+}
 
 object CustomDataView extends View[Organization, CustomData] with Update[Organization, CustomData] {
   def get(id: Id): XorT[GraphM, Error, CustomData] =

@@ -1,7 +1,6 @@
 package sylvestris.service.common
 
-import fommil.sjs.FamilyFormats._
-import spray.json._
+import spray.json._, DefaultJsonProtocol._
 import sylvestris.core._
 
 case class NodeWithRelationships[T](node: Node[T], relationships: Set[Relationship])

@@ -2,7 +2,6 @@ package sylvestris.example.service
 
 import akka.actor.Actor
 import cats.data.Xor
-import fommil.sjs.FamilyFormats._
 import shapeless.HNil
 import spray.httpx.SprayJsonSupport._
 import spray.json._

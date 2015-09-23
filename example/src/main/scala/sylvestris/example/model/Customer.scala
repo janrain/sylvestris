@@ -1,10 +1,10 @@
 package sylvestris.example.model
 
-import fommil.sjs.FamilyFormats._
+import spray.json._, DefaultJsonProtocol._
 import sylvestris.core._
 
 object Customer {
-  implicit val nodeManifest = NodeManifest[Customer](Tag("cust"))
+  implicit val nodeManifest = NodeManifest[Customer](Tag("cust"), jsonFormat1(apply))
 }
 
 case class Customer(name: String)
